@@ -1,0 +1,106 @@
+name: Test
+
+env:
+  TURBO_TELEMETRY_MESSAGE_DISABLED: "1"
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  rust_test:
+    name: Rust testing on ${{ matrix.os.name }}
+    runs-on: ${{ matrix.os.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu
+            runner: ubuntu-latest
+          - name: macos
+            runner: macos-latest
+          - name: windows
+            runner: windows-latest
+    steps:
+      - name: Set git to use LF line endings
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          shared-cache-key: gozo-debug-build
+          save-cache: true
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+
+      - name: Run tests
+        run: cargo test --workspace --no-fail-fast
+
+  smoke:
+    name: CLI smoke test (Go project + npm launcher)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          shared-cache-key: gozo-debug-build
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+
+      - name: Build gozo
+        run: cargo build --package gozo
+
+      - name: Exercise the CLI against a fresh Go project
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$PWD/target/debug:$PATH"
+          tmp=$(mktemp -d)
+          gozo init "$tmp" --yes --module example.com/smoke --cmd smoke
+          cd "$tmp"
+          git init -q && git add -A && git -c user.name=ci -c user.email=ci@example.com commit -qm init
+          gozo doctor --offline
+          gozo check
+          gozo test
+          gozo build --version ci
+          gozo generate --check
+          gozo run --list
+          gozo link --yes --target docker
+          gozo env add SMOKE --value 1 development
+          gozo env pull --yes
+          gozo api project
+          for cmd in doctor check test build; do
+            gozo "$cmd" --json > "out-$cmd.json" || true
+            python3 -c "import json,sys; d=json.load(open('out-$cmd.json')); assert d['schema'].startswith('gozo.'), d" 
+          done
+
+      - name: npm launcher test
+        run: bun run --filter gozo test

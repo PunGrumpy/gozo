@@ -1,0 +1,24 @@
+# Used to auto generate gozo release notes (softprops/action-gh-release
+# calls the GitHub "generate release notes" API which reads this file).
+
+changelog:
+  exclude:
+    labels:
+      - "area: ci"
+      - "release-notes-ignore"
+  categories:
+    - title: Commands
+      labels:
+        - "area: cli"
+    - title: Deploy targets
+      labels:
+        - "area: deploy"
+    - title: Agent API
+      labels:
+        - "area: agent"
+    - title: Docs
+      labels:
+        - "area: docs"
+    - title: Changelog
+      labels:
+        - "*"

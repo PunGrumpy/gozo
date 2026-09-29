@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+
+/**
+ * Launcher for the platform-specific `gozo` binary.
+ *
+ * The binary ships in an optional dependency named `gozo-<os>-<arch>`. It
+ * should already be installed; if it is not, we try to install it just in
+ * time, then fall back to an x64 build under emulation on ARM macOS/Windows.
+ * Adapted from the `turbo` launcher (vercel/turborepo, MIT).
+ */
+
+const childProcess = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const SHOULD_INSTALL = true;
+const SHOULD_ATTEMPT_EMULATED = true;
+const PLATFORMS = ["darwin", "linux", "windows"];
+const ARCHS = ["64", "arm64"];
+
+function binaryPath(platform, arch) {
+  const ext = platform === "windows" ? ".exe" : "";
+  return `gozo-${platform}-${arch}/bin/gozo${ext}`;
+}
+
+function tryResolve(candidate) {
+  try {
+    return require.resolve(candidate);
+  } catch {
+    return null;
+  }
+}
+
+function installUsingNPM() {
+  const pkgDir = path.dirname(require.resolve("gozo/package.json"));
+  // Erase npm_config_global so a nested install inside a global install works.
+  const env = { ...process.env, npm_config_global: undefined };
+  childProcess.execSync(
+    "npm install --loglevel=error --prefer-offline --no-audit --progress=false",
+    { cwd: pkgDir, stdio: "pipe", env }
+  );
+}
+
+function detectPackageManager() {
+  const ua = process.env.npm_config_user_agent;
+  const match = ua && ua.match(/^(\S+)\/(\d+)/);
+  return match ? { name: match[1], major: Number(match[2]) } : null;
+}
+
+function repairInstructions(pm) {
+  switch (pm.name) {
+    case "pnpm":
+      return "pnpm install --force";
+    case "bun":
+      return "bun install --force";
+    case "yarn":
+      return pm.major === 1
+        ? "yarn install --check-files"
+        : "yarn install (after deleting node_modules)";
+    default:
+      return `${pm.name} install (after deleting node_modules)`;
+  }
+}
+
+function getBinaryPath() {
+  const override = process.env.GOZO_BINARY_PATH;
+  if (override) {
+    if (!fs.existsSync(override)) {
+      console.error(`gozo: GOZO_BINARY_PATH points to a missing file:\n${override}`);
+      console.error("GOZO_BINARY_PATH is for development; you probably want to unset it.");
+      process.exit(1);
+    }
+    return override;
+  }
+
+  let { platform, arch } = process;
+  if (platform === "win32") platform = "windows";
+  else if (platform === "android") platform = "linux";
+  const resolvedArch = arch === "x64" ? "64" : arch;
+  const supported = PLATFORMS.includes(platform) && ARCHS.includes(resolvedArch);
+  const correct = supported ? binaryPath(platform, resolvedArch) : null;
+
+  if (correct) {
+    const found = tryResolve(correct);
+    if (found) return found;
+  }
+
+  if (SHOULD_INSTALL && correct) {
+    console.warn("gozo did not find the binary for your platform. Attempting to install it now.");
+    try {
+      installUsingNPM();
+      const found = tryResolve(correct);
+      if (found) {
+        console.warn("Installation succeeded.");
+        return found;
+      }
+      console.warn("npm reported success, but the binary is still missing.");
+      console.warn("npm skips failed optional dependencies silently; see `npm config get cache`/_logs.");
+    } catch (e) {
+      console.warn("Installation failed.");
+      const reason = (e && e.stderr && e.stderr.toString().trim()) || (e && e.message);
+      if (reason) console.warn(reason);
+    }
+    const pm = detectPackageManager();
+    if (pm && pm.name !== "npm") {
+      console.warn(`Your project uses ${pm.name}. To reinstall the missing binary, run:`);
+      console.warn(`  ${repairInstructions(pm)}`);
+    }
+  }
+
+  if (SHOULD_ATTEMPT_EMULATED && arch === "arm64" && ["darwin", "windows"].includes(platform)) {
+    const alt = tryResolve(binaryPath(platform, "64"));
+    if (alt) {
+      console.warn(`gozo: no native ${platform}-arm64 binary found, running the x64 build under emulation.`);
+      return alt;
+    }
+  }
+
+  console.error();
+  console.error("gozo failed to start.");
+  console.error(`Detected platform: ${platform} ${resolvedArch}`);
+  if (!PLATFORMS.includes(platform)) {
+    console.error("gozo does not support this operating system.");
+  } else if (!ARCHS.includes(resolvedArch)) {
+    console.error("gozo supports this operating system but not this processor architecture.");
+  } else {
+    console.error(`Expected the binary at: ${correct}`);
+    console.error("Searched in:");
+    console.error(require.resolve.paths(correct).join("\n"));
+    console.error();
+    console.error("This can happen when dependencies were installed with --no-optional,");
+    console.error("or when node_modules was copied between machines (for example into Docker).");
+  }
+  console.error();
+  console.error("Alternative installs: curl -fsSL https://raw.githubusercontent.com/pungrumpy/gozo/main/install.sh | sh");
+  process.exit(1);
+}
+
+function exitWithCodeOrSignal(code, signal) {
+  if (signal) {
+    try {
+      process.kill(process.pid, signal);
+      return;
+    } catch {
+      process.exit(1);
+    }
+  }
+  process.exit(code === null ? 1 : code);
+}
+
+const child = childProcess.spawn(getBinaryPath(), process.argv.slice(2), {
+  stdio: "inherit",
+  windowsHide: true,
+});
+child.on("error", (err) => {
+  console.error(`gozo: failed to start binary: ${err.message}`);
+  process.exit(1);
+});
+child.on("exit", exitWithCodeOrSignal);
+// Forward termination signals so Ctrl-C reaches the binary and we exit with it.
+for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+  process.on(sig, () => {
+    if (!child.killed) child.kill(sig);
+  });
+}

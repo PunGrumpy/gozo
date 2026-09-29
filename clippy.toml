@@ -1,0 +1,3 @@
+# Tests may use unwrap/expect freely.
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true

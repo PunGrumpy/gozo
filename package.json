@@ -1,0 +1,48 @@
+{
+  "name": "gozo-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo for gozo, the missing developer experience layer for Go.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "verify": "turbo run quality lint check-types",
+    "build:rust": "cargo build --workspace",
+    "build:gozo": "cargo build --package gozo",
+    "gozo": "bun run build:gozo && ./target/debug/gozo",
+    "check": "ultracite check",
+    "fix": "ultracite fix",
+    "test:rust": "cargo test --workspace",
+    "check:rust": "cargo clippy --all-targets --workspace -- -D warnings",
+    "format:rust": "cargo fmt --all --check",
+    "fix:rust": "cargo fmt --all",
+    "changeset": "changeset",
+    "version-packages": "changeset version && node scripts/sync-version.mjs && bun install --lockfile-only",
+    "release:publish": "node scripts/publish-native.mjs && changeset publish",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "1.0.1",
+    "@changesets/cli": "3.0.3",
+    "@types/node": "22.15.3",
+    "eslint-plugin-github": "6.1.2",
+    "eslint-plugin-sonarjs": "^4.2.1",
+    "husky": "^9.1.7",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
+    "oxlint-plugin-react-doctor": "^0.9.14",
+    "turbo": "2.11.5",
+    "typescript": "5.9.3",
+    "ultracite": "7.12.2"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "bun@1.4.2"
+}

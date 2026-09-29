@@ -1,0 +1,35 @@
+# Non-blocking changeset reminder on every PR, per
+# https://changesets.dev/guide/automating#non-blocking
+
+name: Changeset status
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  status:
+    name: Comment changeset status
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pull-requests: write # to create and update the status comment (changesets/action/pr-comment)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Generate status
+        id: status
+        uses: changesets/action/pr-status@v2
+
+      - name: Comment on PR
+        uses: changesets/action/pr-comment@v2
+        with:
+          body: ${{ steps.status.outputs.comment-body }}
+          update-id: changeset-status

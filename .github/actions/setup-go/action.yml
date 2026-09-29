@@ -1,0 +1,16 @@
+name: "gozo Go Setup"
+description: "Installs the Go toolchain the CLI is exercised against in CI"
+inputs:
+  go-version:
+    description: "Go version"
+    required: false
+    default: "1.27"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache: false

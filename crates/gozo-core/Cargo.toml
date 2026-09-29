@@ -1,0 +1,16 @@
+[package]
+name = "gozo-core"
+description = "Project configuration, linking, env store and deployment history for gozo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gozo-go = { path = "../gozo-go" }
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+toml.workspace = true

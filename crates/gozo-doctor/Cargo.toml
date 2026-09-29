@@ -1,0 +1,12 @@
+[package]
+name = "gozo-doctor"
+description = "Project health checks for Go projects"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gozo-go = { path = "../gozo-go" }
+serde.workspace = true

@@ -1,0 +1,219 @@
+# Release pipeline, following https://changesets.dev/guide/automating
+# (changesets/action v2 sub-actions with npm trusted publishing).
+#
+#   select-mode ─┬─ version  (changesets pending)  → opens/updates "chore: Version packages" PR
+#                └─ build    (nothing pending, publishable version) → 5 platform binaries
+#                      └─ publish → platform npm packages, `changeset publish` (gozo + git tag
+#                                   + GitHub release), then tarballs attached to that release
+#
+# Permissions are reset at the workflow level and granted per job.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and package binaries only; skip npm publish and the GitHub release."
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  CARGO_PROFILE_RELEASE_LTO: true
+  TURBO_TELEMETRY_MESSAGE_DISABLED: "1"
+
+jobs:
+  select-mode:
+    name: Select mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ github.event_name == 'workflow_dispatch' && 'publish' || steps.select-mode.outputs.mode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Select mode
+        id: select-mode
+        uses: changesets/action/select-mode@v2
+
+  version:
+    name: Version packages
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'version'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # to commit version changes (changesets/action/version)
+      pull-requests: write # to create the pull request (changesets/action/version)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      # version-packages runs scripts/sync-version.mjs, which needs cargo to
+      # refresh Cargo.lock after copying the version into Cargo.toml.
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          cache: "false"
+
+      - name: Create or update the version PR
+        uses: changesets/action/version@v2
+        with:
+          script: bun run version-packages
+          commit-message: "chore: Version packages"
+          pr-title: "chore: Version packages"
+
+  build:
+    name: build ${{ matrix.asset }}
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'publish'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            asset: gozo-linux-x86_64
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            asset: gozo-linux-aarch64
+          - runner: macos-13
+            target: x86_64-apple-darwin
+            asset: gozo-darwin-x86_64
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            asset: gozo-darwin-aarch64
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset: gozo-windows-x86_64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-${{ matrix.target }}
+
+      - name: Install musl tools
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }} --package gozo
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "out/${{ matrix.asset }}"
+          bin=gozo; [[ "${{ runner.os }}" == "Windows" ]] && bin=gozo.exe
+          cp "target/${{ matrix.target }}/release/$bin" "out/${{ matrix.asset }}/$bin"
+          tar -C "out/${{ matrix.asset }}" -czf "out/${{ matrix.asset }}.tar.gz" "$bin"
+          if command -v sha256sum >/dev/null; then
+            (cd out && sha256sum "${{ matrix.asset }}.tar.gz" > "${{ matrix.asset }}.tar.gz.sha256")
+          else
+            (cd out && shasum -a 256 "${{ matrix.asset }}.tar.gz" > "${{ matrix.asset }}.tar.gz.sha256")
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: out/
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: [select-mode, build]
+    if: needs.select-mode.outputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # to push git tags and create the GitHub release (changesets/action/publish)
+      id-token: write # npm trusted publishing / provenance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./packages/gozo/package.json').version")
+          cargo_version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          if [[ "$version" != "$cargo_version" ]]; then
+            echo "::error::packages/gozo is $version but Cargo.toml is $cargo_version; run \`bun run version-packages\`"; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Generate platform packages
+        run: node scripts/package-native.mjs --version "${{ steps.version.outputs.version }}" --artifacts release-artifacts --out packages/gozo/npm
+
+      - name: Pin launcher to platform packages
+        run: node packages/gozo/bump-version.mjs
+
+      # npm trusted publishing needs npm 11.5.1 or newer; Node's bundled npm may be older.
+      - name: Update npm
+        run: npm install -g npm@latest && npm --version
+
+      # Publishes the generated gozo-<os>-<arch> packages, then `changeset publish`
+      # publishes `gozo`, pushes the `gozo@<version>` tag and creates the GitHub release.
+      - name: Publish to npm
+        id: changesets
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+        uses: changesets/action/publish@v2
+        with:
+          script: bun run release:publish
+          create-github-releases: true
+
+      - name: Attach binaries to the GitHub release
+        if: ${{ steps.changesets.outputs.published == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "gozo@${{ steps.version.outputs.version }}" release-artifacts/*.tar.gz release-artifacts/*.sha256 --clobber
+
+      - name: Dry run summary
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          echo "dry run: would publish the following packages and assets"
+          ls packages/gozo/npm release-artifacts
+          cat packages/gozo/package.json

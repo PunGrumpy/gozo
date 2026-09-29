@@ -1,0 +1,56 @@
+name: gozo bug report
+description: Create a bug report
+labels: ["kind: bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is to report bugs. Before opening a new issue, please do a [search](https://github.com/pungrumpy/gozo/issues) of existing issues and :+1: upvote the existing issue instead.
+
+  - type: checkboxes
+    attributes:
+      label: Verify latest release
+      description: "Run `gozo update` (or `npm install gozo@latest`) and confirm the issue still reproduces."
+      options:
+        - label: I verified that the issue exists in the latest gozo release.
+          required: true
+
+  - type: textarea
+    attributes:
+      label: Environment information
+      render: block
+      description: |
+        Run `gozo doctor --json` and `gozo api project` in the affected project and paste the output. Review it for anything sensitive first.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Link to code that reproduces this issue
+      description: A link to a **public** GitHub repository with a minimal reproduction, ideally created with `gozo init`.
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Actual behavior
+      description: Include the exact command, its human output, and its `--json` output when relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the unexpected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Deployment target (docker / kubernetes), CI system, operating system, shell, anything else that might help.

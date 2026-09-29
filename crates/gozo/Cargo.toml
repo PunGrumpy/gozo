@@ -1,0 +1,34 @@
+[package]
+name = "gozo"
+description = "The missing developer experience layer for Go"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "gozo"
+path = "src/main.rs"
+
+[dependencies]
+gozo-go = { path = "../gozo-go" }
+gozo-doctor = { path = "../gozo-doctor" }
+gozo-core = { path = "../gozo-core" }
+gozo-deploy = { path = "../gozo-deploy" }
+anyhow.workspace = true
+clap.workspace = true
+owo-colors.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+dialoguer.workspace = true
+notify.workspace = true
+notify-debouncer-mini.workspace = true
+globset.workspace = true
+ureq.workspace = true
+flate2.workspace = true
+tar.workspace = true
+tempfile.workspace = true
+shell-words.workspace = true
+toml.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "gozo-deploy"
+description = "Deployment target adapters (docker, kubernetes) for gozo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gozo-core = { path = "../gozo-core" }
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

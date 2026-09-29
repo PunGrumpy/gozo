@@ -1,0 +1,41 @@
+name: "gozo Rust Setup"
+description: "Sets up the Rust toolchain (from rust-toolchain.toml) and the cargo cache"
+inputs:
+  targets:
+    description: "Comma-separated list of target triples to install for this toolchain"
+    required: false
+  shared-cache-key:
+    description: "A cache key that is used instead of the automatic `job`-based key, and is stable over multiple jobs."
+    required: false
+  cache-key:
+    description: "An additional cache key added alongside the automatic key, to further differentiate jobs."
+    required: false
+  save-cache:
+    description: "Whether the cache should be saved. If `false`, the cache is only restored."
+    required: false
+    default: "false"
+  cache:
+    description: "Whether to enable the Rust cache. Set to `false` for jobs that don't compile."
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Setup Rust toolchain"
+      uses: actions-rust-lang/setup-rust-toolchain@2b1f5e9b395427c92ee4e3331786ca3c37afe2d7 # v1
+      with:
+        target: ${{ inputs.targets }}
+        # needed to not make it override the defaults
+        rustflags: ""
+        # we want more specific settings
+        cache: false
+
+    - name: "Setup Rust Cache"
+      if: inputs.cache == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+      with:
+        shared-key: ${{ inputs.shared-cache-key && format('{0}-{1}', github.head_ref || github.ref_name, inputs.shared-cache-key) || '' }}
+        key: ${{ inputs.cache-key && format('{0}-{1}', github.head_ref || github.ref_name, inputs.cache-key) || (github.head_ref || github.ref_name) }}
+        # the cache is large and the free tier is 10gb, so only save on main
+        save-if: ${{ github.ref == 'refs/heads/main' && inputs.save-cache || 'false' }}

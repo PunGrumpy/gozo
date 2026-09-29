@@ -1,0 +1,108 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "noUpdateNotifier": true,
+  // Tooling that needs the host environment (cargo, rustup, go, gh actions).
+  "globalPassThroughEnv": [
+    "Path",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "TMPDIR",
+    "HOME",
+    "TMP",
+    "USERPROFILE",
+    "CARGO_HOME",
+    "RUSTUP_HOME",
+    "RUSTFLAGS",
+    "RUSTC_WRAPPER",
+    "CARGO_INCREMENTAL",
+    "CARGO_BUILD_JOBS",
+    "GOPATH",
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOTOOLCHAIN",
+    "SCCACHE_GHA_ENABLED",
+    "ACTIONS_CACHE_URL",
+    "ACTIONS_RUNTIME_TOKEN"
+  ],
+  // Segment caches by platform: Rust and Go outputs differ per OS.
+  "globalEnv": ["OS", "RUNNER_OS"],
+  "tasks": {
+    // ---- JavaScript packages (packages/*, apps/*) -------------------------
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "dependsOn": ["transit"]
+    },
+    "check-types": {
+      "dependsOn": ["transit"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    // Synthetic task so parallel checks still invalidate when a dependency changes.
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
+
+    // ---- Rust workspace (crates/*) ---------------------------------------
+    // These are Root Tasks because the crates are not JavaScript packages.
+    // The scripts live in the root package.json (build:rust, test:rust, ...).
+    "//#build:rust": {
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "crates/**",
+        "Cargo.toml",
+        "Cargo.lock",
+        "rust-toolchain.toml"
+      ]
+    },
+    "//#test:rust": {
+      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
+    },
+    "//#check:rust": {
+      "inputs": [
+        "crates/**",
+        "Cargo.toml",
+        "Cargo.lock",
+        "rust-toolchain.toml",
+        "clippy.toml"
+      ]
+    },
+    "//#format:rust": {
+      "inputs": ["crates/**", ".rustfmt.toml"]
+    },
+    "//#fix:rust": {
+      "cache": false
+    },
+
+    // ---- JavaScript lint + format via ultracite (oxlint + oxfmt) -----------
+    "//#check": {
+      "inputs": ["$TURBO_DEFAULT$", "!crates/**", "!target/**", "!.turbo/**"]
+    },
+    "//#fix": {
+      "cache": false
+    },
+
+    // ---- Aggregates -------------------------------------------------------
+    // `bun run verify` = `turbo run quality lint check-types`: the root gates
+    // below plus every package's lint/check-types. Root tasks cannot depend on
+    // package tasks by bare name, which is why those are passed on the command line.
+    "//#quality": {
+      "dependsOn": [
+        "//#check",
+        "//#check:rust",
+        "//#format:rust",
+        "//#test:rust"
+      ]
+    }
+  }
+}
