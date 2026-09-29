@@ -70,12 +70,12 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      # version-packages runs scripts/sync-version.mjs, which patches Cargo.toml
+      # changeset:version runs scripts/sync-version.mjs, which patches Cargo.toml
       # and Cargo.lock directly, so no Rust toolchain is needed here.
       - name: Create or update the version PR
         uses: changesets/action/version@v2
         with:
-          script: bun run version-packages
+          script: bun run changeset:version
           commit-message: "chore: Version packages"
           pr-title: "chore: Version packages"
 
@@ -176,7 +176,7 @@ jobs:
           version=$(node -p "require('./packages/gozo/package.json').version")
           cargo_version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
           if [[ "$version" != "$cargo_version" ]]; then
-            echo "::error::packages/gozo is $version but Cargo.toml is $cargo_version; run \`bun run version-packages\`"; exit 1
+            echo "::error::packages/gozo is $version but Cargo.toml is $cargo_version; run \`bun run changeset:version\`"; exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
@@ -197,7 +197,7 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         uses: changesets/action/publish@v2
         with:
-          script: bun run release:publish
+          script: bun run changeset:publish
           create-github-releases: true
 
       - name: Attach binaries to the GitHub release

@@ -17,15 +17,15 @@ pub struct GoMod {
     /// The `toolchain` directive, e.g. `go1.27.1`.
     #[serde(default)]
     pub toolchain: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub require: Vec<Require>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub exclude: Vec<ModuleRef>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub replace: Vec<Replace>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub retract: Vec<serde_json::Value>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub tool: Vec<Tool>,
 }
 
@@ -78,9 +78,9 @@ pub struct GoWork {
     pub go: Option<String>,
     #[serde(default)]
     pub toolchain: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub r#use: Vec<Use>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub replace: Vec<Replace>,
 }
 
@@ -101,5 +101,23 @@ impl Go {
     /// `go work edit -json` for the workspace whose go.work lives in `dir`.
     pub fn work_edit(&self, dir: &Path) -> Result<GoWork, GoError> {
         self.run_json_local(dir, ["work", "edit", "-json"])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_null_lists_from_older_go() {
+        // Go 1.25 prints explicit nulls; Go 1.27 omits the keys entirely.
+        let text = r#"{"Module":{"Path":"example.com/demo"},"Go":"1.25.0","Require":null,"Exclude":null,"Replace":null,"Retract":null,"Tool":null}"#;
+        let m: GoMod = serde_json::from_str(text).unwrap();
+        assert_eq!(m.module.unwrap().path, "example.com/demo");
+        assert!(m.require.is_empty() && m.tool.is_empty());
+
+        let w: GoWork =
+            serde_json::from_str(r#"{"Go":"1.25.0","Use":null,"Replace":null}"#).unwrap();
+        assert!(w.r#use.is_empty());
     }
 }

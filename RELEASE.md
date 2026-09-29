@@ -8,11 +8,11 @@ The automation follows [changesets.dev/guide/automating](https://changesets.dev/
 
 1. **Every PR with a user-facing change adds a changeset** (`bunx changeset`). `changeset-status.yml` comments on the PR whether one is present (non-blocking).
 2. **On push to `main`**, `release.yml` runs `changesets/action/select-mode`:
-   - `version` (changesets pending): `changesets/action/version` runs `bun run version-packages` and opens or updates the "chore: Version packages" PR. That script is `changeset version` + `scripts/sync-version.mjs` (patches the version into `Cargo.toml` and `Cargo.lock`) + `bun install --lockfile-only`.
+   - `version` (changesets pending): `changesets/action/version` runs `bun run changeset:version` and opens or updates the "chore: Version packages" PR. That script is `changeset version` + `scripts/sync-version.mjs` (patches the version into `Cargo.toml` and `Cargo.lock`) + `bun install --lockfile-only`.
    - `publish` (that PR was merged): the `build` matrix compiles `gozo` for linux/darwin/windows on x86_64 and aarch64, then `publish`:
      1. `scripts/package-native.mjs` turns the binaries into `gozo-<os>-<arch>` packages,
      2. `packages/gozo/bump-version.mjs` pins the launcher's `optionalDependencies`,
-     3. `changesets/action/publish` runs `bun run release:publish` = `scripts/publish-native.mjs` (platform packages) then `changeset publish` (`gozo`, the `gozo@<version>` git tag, the GitHub release with the changelog),
+     3. `changesets/action/publish` runs `bun run changeset:publish` = `scripts/publish-native.mjs` (platform packages) then `changeset publish` (`gozo`, the `gozo@<version>` git tag, the GitHub release with the changelog),
      4. `gh release upload` attaches `gozo-<os>-<arch>.tar.gz` + `.sha256` to that release, which `install.sh` and `gozo update` consume.
    - `none`: nothing to do.
 

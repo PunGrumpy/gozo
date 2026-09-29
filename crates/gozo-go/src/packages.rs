@@ -14,11 +14,11 @@ pub struct PackageInfo {
     pub dir: String,
     #[serde(default)]
     pub module: Option<PackageModule>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub go_files: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub test_go_files: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::null_default")]
     pub imports: Vec<String>,
 }
 

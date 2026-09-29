@@ -23,12 +23,11 @@
     "format:rust": "cargo fmt --all --check",
     "fix:rust": "cargo fmt --all",
     "changeset": "changeset",
-    "version-packages": "changeset version && node scripts/sync-version.mjs && bun install --lockfile-only",
-    "release:publish": "node scripts/publish-native.mjs && changeset publish",
+    "changeset:version": "changeset version && node scripts/sync-version.mjs && bun install --lockfile-only",
+    "changeset:publish": "node scripts/publish-native.mjs && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "1.0.1",
     "@changesets/cli": "3.0.3",
     "@types/node": "22.15.3",
     "eslint-plugin-github": "6.1.2",
