@@ -73,7 +73,10 @@ struct Doc {
 
 #[derive(Debug, Serialize)]
 struct Artifact {
+    /// Logical binary name (`api`), the same on every platform.
     name: String,
+    /// File name actually written (`api_windows_amd64.exe`).
+    file: String,
     package: String,
     goos: String,
     goarch: String,
@@ -192,7 +195,8 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
                     );
                 }
                 artifacts.push(Artifact {
-                    name,
+                    name: pkg.name.clone(),
+                    file: name,
                     package: pkg.import_path.clone(),
                     goos: target.goos.clone(),
                     goarch: target.goarch.clone(),
