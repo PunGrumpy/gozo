@@ -1,0 +1,49 @@
+---
+title: Configuration
+description: gozo.toml is committed and shared; .gozo/ is local.
+---
+
+## gozo.toml
+
+`gozo init` writes a commented starter file. Every section is optional.
+
+```toml
+[project]
+name = "api"
+
+[dev]
+cmd = "./cmd/api"          # main package to run, auto-detected when omitted
+port = 8080
+env = [".env", ".env.local"]
+services = "docker-compose.yml"
+
+[build]
+output = "dist"
+trimpath = true
+targets = ["linux/amd64", "darwin/arm64"]
+
+[tasks]
+lint = "golangci-lint run ./..."
+migrate = { cmd = "go run ./cmd/migrate up", deps = ["build"] }
+
+[deploy]
+target = "kubernetes"
+
+[deploy.docker]
+image = "ghcr.io/acme/api"
+platform = "linux/amd64"
+push = true
+
+[deploy.kubernetes]
+context = "prod"
+namespace = "shop"
+deployment = "api"
+```
+
+## .gozo/
+
+Created by `gozo link` and never committed. It holds `project.json` (the deployment target this directory is linked to), `env/<environment>.env` (variables managed by `gozo env`) and `deployments.json` (local deployment history used by `gozo rollback`).
+
+## Environments
+
+`gozo env` follows Vercel's names: `development`, `preview` and `production`. `gozo env pull` writes `.env.local` from the development environment by default; `gozo dev` layers `.env`, `.env.local`, `.env.development` and `.env.development.local` on top of it.

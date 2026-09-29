@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@import "./tokens.css";
+
+@theme inline {
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Fumadocs theme mapped onto the gozo tokens. Light values live in :root, dark in .dark (tokens.css). */
+:root,
+.dark {
+  --color-fd-background: var(--ds-background-100);
+  --color-fd-foreground: var(--ds-gray-1000);
+  --color-fd-muted: var(--ds-background-200);
+  --color-fd-muted-foreground: var(--ds-gray-900);
+  --color-fd-popover: var(--ds-background-100);
+  --color-fd-popover-foreground: var(--ds-gray-1000);
+  --color-fd-card: var(--ds-background-100);
+  --color-fd-card-foreground: var(--ds-gray-1000);
+  --color-fd-border: var(--ds-gray-alpha-400);
+  --color-fd-primary: var(--ds-gray-1000);
+  --color-fd-primary-foreground: var(--ds-background-100);
+  --color-fd-secondary: var(--ds-gray-100);
+  --color-fd-secondary-foreground: var(--ds-gray-1000);
+  --color-fd-accent: var(--ds-gray-100);
+  --color-fd-accent-foreground: var(--ds-gray-1000);
+  --color-fd-ring: var(--ds-blue-700);
+}
+
+html {
+  scrollbar-gutter: stable;
+  background: var(--color-fd-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* docs typography: serif headings, tabular mono, no ligatures */
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+.prose h1 {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+.prose h2 {
+  font-size: 1.75rem;
+}
+code,
+kbd,
+pre {
+  font-variant-ligatures: none;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,25 @@
+---
+title: Deploy targets
+description: Docker on this machine, or a Kubernetes deployment.
+---
+
+`gozo link` binds a directory to a target and stores the choice in `.gozo/project.json`. Every command after that reads the link.
+
+## Docker
+
+Builds an image from your `Dockerfile`, or generates a multi-stage one under `.gozo/Dockerfile` when none exists, then runs it as a named container with `--restart unless-stopped`. `gozo status` reads `docker inspect`, `gozo logs -f` streams `docker logs`, and `gozo rollback` re-runs the previous image from the local history.
+
+## Kubernetes
+
+Builds and pushes the image, applies the manifests directory if configured, then `kubectl set image` on the deployment and waits for the rollout. `gozo rollback` uses `kubectl rollout undo` or sets a specific recorded image. `--context` and `-n` are added everywhere from the link.
+
+## Deploy flow
+
+```bash
+gozo deploy            # preview environment, tag from the git sha
+gozo deploy --prod     # production
+gozo ls                # local history, newest first
+gozo rollback          # back to the previous ready deployment
+```
+
+stdout of `gozo deploy` is only the URL, or the image reference when the target has no URL, so it can be piped.
