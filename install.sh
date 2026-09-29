@@ -1,12 +1,12 @@
 #!/bin/sh
-# gozo installer: curl -fsSL https://raw.githubusercontent.com/pungrumpy/gozo/main/install.sh | sh
+# gozo installer: curl -fsSL https://raw.githubusercontent.com/PunGrumpy/gozo/main/install.sh | sh
 #
 # Environment:
 #   GOZO_INSTALL   directory to install into (default: ~/.gozo/bin)
 #   GOZO_VERSION   version tag to install, e.g. v0.2.0 (default: latest)
 set -eu
 
-repo="pungrumpy/gozo"
+repo="PunGrumpy/gozo"
 install_dir="${GOZO_INSTALL:-$HOME/.gozo/bin}"
 version="${GOZO_VERSION:-latest}"
 

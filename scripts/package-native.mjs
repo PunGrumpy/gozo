@@ -100,15 +100,15 @@ const generatePackage = (platform) => {
   copyFileSync(path.join(template, "README.md"), path.join(dir, "README.md"));
   copyFileSync(path.join(template, "LICENSE"), path.join(dir, "LICENSE"));
   const manifest = {
-    bugs: "https://github.com/pungrumpy/gozo/issues",
+    bugs: "https://github.com/PunGrumpy/gozo/issues",
     cpu: platform.cpu,
     description: `The ${platform.asset.replace("gozo-", "")} binary for gozo, the missing developer experience layer for Go.`,
-    homepage: "https://github.com/pungrumpy/gozo",
+    homepage: "https://github.com/PunGrumpy/gozo",
     license: "MIT",
     name: platform.name,
     os: platform.os,
     preferUnplugged: true,
-    repository: "https://github.com/pungrumpy/gozo",
+    repository: "https://github.com/PunGrumpy/gozo",
     version,
   };
   writeFileSync(

@@ -132,7 +132,7 @@ function getBinaryPath() {
     console.error("or when node_modules was copied between machines (for example into Docker).");
   }
   console.error();
-  console.error("Alternative installs: curl -fsSL https://raw.githubusercontent.com/pungrumpy/gozo/main/install.sh | sh");
+  console.error("Alternative installs: curl -fsSL https://raw.githubusercontent.com/PunGrumpy/gozo/main/install.sh | sh");
   process.exit(1);
 }
 

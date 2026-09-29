@@ -16,6 +16,23 @@
 | Lint + format JS | `bun run check` / `bun run fix` (ultracite) |
 | Try against a Go project | `./target/debug/gozo -C path/to/project doctor` |
 
+## Repository layout
+
+Layout follows [vercel/turborepo](https://github.com/vercel/turborepo).
+
+```text
+crates/gozo          CLI (clap)
+crates/gozo-go       typed wrapper around the `go` command
+crates/gozo-core     gozo.toml, .gozo/ link, env store, deployment history
+crates/gozo-doctor   health checks
+crates/gozo-deploy   docker and kubernetes adapters
+packages/gozo        npm launcher; platform packages are generated at publish time
+scripts/             release helpers (version sync, platform packaging, publishing)
+.github/             turborepo-style workflows and composite actions
+```
+
+Turborepo orchestrates tasks, Bun is the package manager, Ultracite lints and formats JavaScript, and changesets drive versioning (see [RELEASE.md](RELEASE.md)).
+
 ## Adding or changing a command
 
 - Commands live in `crates/gozo/src/commands/<name>.rs`, one module per command, with its `clap::Args`.

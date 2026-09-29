@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use crate::ctx::Ctx;
 
-const REPO: &str = "pungrumpy/gozo";
+const REPO: &str = "PunGrumpy/gozo";
 const CURRENT: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, clap::Args)]

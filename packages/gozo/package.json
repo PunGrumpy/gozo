@@ -2,10 +2,10 @@
   "name": "gozo",
   "version": "0.0.0",
   "description": "The missing developer experience layer for Go.",
-  "homepage": "https://github.com/pungrumpy/gozo",
-  "bugs": "https://github.com/pungrumpy/gozo/issues",
+  "homepage": "https://github.com/PunGrumpy/gozo",
+  "bugs": "https://github.com/PunGrumpy/gozo/issues",
   "license": "MIT",
-  "repository": "https://github.com/pungrumpy/gozo",
+  "repository": "https://github.com/PunGrumpy/gozo",
   "bin": {
     "gozo": "./bin/gozo"
   },

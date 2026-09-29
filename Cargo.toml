@@ -12,7 +12,7 @@ members = [
 version = "0.0.0"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/pungrumpy/gozo"
+repository = "https://github.com/PunGrumpy/gozo"
 rust-version = "1.85"
 
 [workspace.dependencies]

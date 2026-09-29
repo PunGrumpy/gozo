@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This template is to report bugs. Before opening a new issue, please do a [search](https://github.com/pungrumpy/gozo/issues) of existing issues and :+1: upvote the existing issue instead.
+        This template is to report bugs. Before opening a new issue, please do a [search](https://github.com/PunGrumpy/gozo/issues) of existing issues and :+1: upvote the existing issue instead.
 
   - type: checkboxes
     attributes:

@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "pungrumpy/gozo" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "PunGrumpy/gozo" }],
   "commit": false,
   "fixed": [],
   "linked": [],
