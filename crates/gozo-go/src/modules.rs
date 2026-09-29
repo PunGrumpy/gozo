@@ -1,4 +1,4 @@
-//! `go list -m` and `go mod tidy -diff`.
+//! `go list -m -json` and `go mod tidy -diff`.
 
 use std::path::Path;
 
@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::command::{Go, GoError};
 
-/// One record from `go list -m -json`.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ModuleInfo {
@@ -38,23 +37,21 @@ pub struct ModuleUpdate {
     pub version: String,
 }
 
-/// Result of `go mod tidy -diff`.
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "state", rename_all = "snake_case")]
 pub enum TidyStatus {
-    /// go.mod and go.sum already match what tidy would write.
     Clean,
-    /// tidy would change the files; `diff` is the unified diff.
-    Dirty { diff: String },
-    /// tidy could not run, typically because the module cache is incomplete
-    /// and we deliberately ran offline.
-    Unknown { reason: String },
+    Dirty {
+        diff: String,
+    },
+    /// tidy could not run, typically because we ran offline with an incomplete module cache.
+    Unknown {
+        reason: String,
+    },
 }
 
 impl Go {
-    /// `go list -m -json all`, optionally with `-u` to include available updates.
-    ///
-    /// With `updates = true` this touches the network (via GOPROXY).
+    /// `go list -m -json all`; `updates` adds `-u`, which touches the network.
     pub fn list_modules(&self, dir: &Path, updates: bool) -> Result<Vec<ModuleInfo>, GoError> {
         let mut args = vec!["list", "-m", "-json"];
         if updates {
@@ -76,15 +73,14 @@ impl Go {
             // `-diff` exits 1 when there is a diff and prints it to stdout.
             1 if !out.stdout.trim().is_empty() => TidyStatus::Dirty { diff: out.stdout },
             _ => TidyStatus::Unknown {
-                reason: first_line(&out.stderr).to_owned(),
+                reason: out
+                    .stderr
+                    .lines()
+                    .map(str::trim)
+                    .find(|l| !l.is_empty())
+                    .unwrap_or("")
+                    .to_owned(),
             },
         })
     }
-}
-
-fn first_line(s: &str) -> &str {
-    s.lines()
-        .find(|l| !l.trim().is_empty())
-        .unwrap_or("")
-        .trim()
 }

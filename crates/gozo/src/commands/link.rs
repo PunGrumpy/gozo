@@ -1,6 +1,3 @@
-//! `gozo link` / `gozo unlink`: bind a directory to a deployment target,
-//! stored in `.gozo/project.json` like Vercel's `.vercel/project.json`.
-
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 
@@ -48,7 +45,6 @@ struct UnlinkDoc<'a> {
     removed: bool,
 }
 
-/// Resolve the project a `PATH` argument points at, falling back to the ctx.
 fn resolve(ctx: &Ctx, path: &Option<PathBuf>) -> anyhow::Result<(Project, Config, Option<Link>)> {
     match path {
         Some(p) => {
@@ -98,7 +94,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         }
     }
 
-    // Project name.
     let default_name = ctx
         .project_override
         .clone()
@@ -116,7 +111,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         anyhow::bail!("project name cannot be empty");
     }
 
-    // Target.
     let target = match &args.target {
         Some(t) => t.parse::<Target>()?,
         None => {
@@ -304,7 +298,6 @@ fn non_empty(s: String) -> Option<String> {
     }
 }
 
-/// `kubectl config current-context`, when kubectl is installed and configured.
 fn kubectl_current_context() -> Option<String> {
     let out = Command::new("kubectl")
         .args(["config", "current-context"])

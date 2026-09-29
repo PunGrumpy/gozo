@@ -1,8 +1,4 @@
-//! `gozo rollback [DEPLOYMENT_ID]` and `gozo rollback status`.
-//!
-//! The target is resolved from the local deployment history: an explicit id,
-//! else the ready deployment before the current one. Without any history the
-//! adapter is asked for its own previous revision (kubernetes only).
+//! Without local history the adapter rolls back to its own previous revision.
 
 use std::collections::BTreeMap;
 use std::process::ExitCode;
@@ -12,10 +8,11 @@ use anyhow::{anyhow, bail};
 use chrono::Utc;
 use gozo_core::{Deployment, DeploymentHistory};
 use gozo_deploy::{Adapter, RollbackTo};
-use owo_colors::{OwoColorize, Stream::Stdout};
 use serde::Serialize;
 
+use super::util::exit_for;
 use crate::ctx::Ctx;
+use crate::style::{Mark, mark};
 use crate::ui::{Timer, UiReporter};
 
 #[derive(Debug, clap::Args)]
@@ -122,8 +119,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         return Ok(ExitCode::from(1));
     }
 
-    // Record what happened: the replaced deployment is rolled back, and the
-    // restored one becomes a fresh ready entry pointing at the same image.
+    // The restored deployment becomes a fresh ready entry with the same image.
     if let Some(c) = &current {
         if let Some(d) = history.find_mut(&c.id) {
             d.status = "rolled-back".to_owned();
@@ -185,7 +181,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-/// `gozo rollback status`: is the target healthy after the rollout?
 fn status(ctx: &Ctx, adapter: &dyn Adapter) -> anyhow::Result<ExitCode> {
     let s = adapter
         .status()
@@ -202,20 +197,11 @@ fn status(ctx: &Ctx, adapter: &dyn Adapter) -> anyhow::Result<ExitCode> {
             desired: s.desired,
         })?;
     } else {
-        let mark = match (ctx.ui.color, s.healthy) {
-            (true, true) => "✓".if_supports_color(Stdout, |t| t.green()).to_string(),
-            (true, false) => "✗".if_supports_color(Stdout, |t| t.red()).to_string(),
-            (false, true) => "OK".to_owned(),
-            (false, false) => "FAIL".to_owned(),
-        };
+        let mark = mark(ctx.ui.color, if s.healthy { Mark::Ok } else { Mark::Fail });
         ctx.out
             .line(format!("{mark} {}: {}", adapter.describe(), s.summary));
     }
-    Ok(if s.healthy {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    })
+    Ok(exit_for(s.healthy))
 }
 
 #[derive(Serialize)]

@@ -1,4 +1,4 @@
-//! Discovery of `main` packages, the things `gozo dev` runs and `gozo build` builds.
+//! Discovery of `main` packages for `gozo dev` and `gozo build`.
 
 use std::path::{Path, PathBuf};
 
@@ -10,18 +10,15 @@ use crate::Result;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct MainPackage {
-    /// Binary name: last element of the import path.
     pub name: String,
     pub import_path: String,
-    /// Absolute directory.
     pub dir: PathBuf,
-    /// Directory relative to its module, as a `./...` style path (`./cmd/api`).
+    /// Relative to its module as a `./cmd/api` style path.
     pub rel: String,
-    /// Directory of the module that owns the package.
     pub module_dir: PathBuf,
 }
 
-/// Every `package main` in the project, cmd/ packages first.
+/// Every `package main` in the project, `cmd/` packages first.
 pub fn main_packages(go: &Go, project: &Project) -> Result<Vec<MainPackage>> {
     let mut out = Vec::new();
     for m in &project.modules {
@@ -60,8 +57,6 @@ fn rel_path(base: &Path, dir: &Path) -> String {
     }
 }
 
-/// Pick the package `gozo dev` should run: an explicit `dev.cmd`, else the
-/// only main package, else the first one under `cmd/`.
 pub fn pick_dev_package<'a>(
     pkgs: &'a [MainPackage],
     configured: Option<&str>,

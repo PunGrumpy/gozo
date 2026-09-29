@@ -1,10 +1,5 @@
-//! Human-facing output in the style of Vercel CLI.
-//!
-//! Rules:
-//! - Everything here goes to **stderr**. stdout is reserved for the primary
-//!   result of a command (a URL, a file path, JSON) so it can be piped.
-//! - `> ` prefixes progress steps, `✓` success, `!` warnings, `Error:` failures.
-//! - Prompts honor `--yes` (take the default) and `--non-interactive` (fail).
+//! Progress and prompts on stderr, Vercel-style; stdout is reserved for the
+//! command's primary result (see `output.rs` and `style.rs`).
 
 use std::io::{IsTerminal, Write};
 use std::time::Instant;
@@ -18,7 +13,7 @@ pub struct Ui {
     pub interactive: bool,
     pub yes: bool,
     pub debug: bool,
-    /// JSON mode: suppress all chatter so stdout stays clean and stderr quiet.
+    /// `--json`: suppress everything except `error`.
     pub quiet: bool,
 }
 
@@ -49,7 +44,6 @@ impl Ui {
         let _ = writeln!(std::io::stderr(), "{s}");
     }
 
-    /// `gozo CLI 0.1.0`, printed once at the top like Vercel does.
     pub fn header(&self) {
         self.line(format!(
             "{}",
@@ -96,7 +90,6 @@ impl Ui {
         self.line(msg.as_ref().to_owned());
     }
 
-    /// Secondary line under a step.
     pub fn detail(&self, msg: impl AsRef<str>) {
         self.line(format!(
             "  {}",
@@ -104,7 +97,6 @@ impl Ui {
         ));
     }
 
-    /// Only shown with --debug.
     pub fn debug(&self, msg: impl AsRef<str>) {
         if self.debug {
             self.line(format!(
@@ -114,7 +106,6 @@ impl Ui {
         }
     }
 
-    /// Aligned `label   value` pair.
     pub fn kv(&self, label: &str, value: impl AsRef<str>) {
         self.line(format!(
             "  {} {}",
@@ -123,7 +114,6 @@ impl Ui {
         ));
     }
 
-    /// A blank line.
     pub fn blank(&self) {
         self.line(String::new());
     }
@@ -154,7 +144,7 @@ impl Ui {
         )
     }
 
-    /// Yes/no question. `--yes` returns `default`; non-interactive errors.
+    /// `--yes` returns `default`; non-interactive errors.
     pub fn confirm(&self, question: &str, default: bool) -> Result<bool> {
         if self.yes {
             return Ok(default);
@@ -168,7 +158,7 @@ impl Ui {
             .interact()?)
     }
 
-    /// Pick one item. `--yes` picks `default`; non-interactive errors.
+    /// `--yes` picks `default`; non-interactive errors.
     pub fn select(&self, prompt: &str, items: &[String], default: usize) -> Result<usize> {
         if self.yes {
             return Ok(default.min(items.len().saturating_sub(1)));
@@ -183,7 +173,7 @@ impl Ui {
             .interact()?)
     }
 
-    /// Free text. `--yes` returns `default` when there is one.
+    /// `--yes` or non-interactive returns `default`; without one, non-interactive errors.
     pub fn input(&self, prompt: &str, default: Option<&str>) -> Result<String> {
         if self.yes {
             if let Some(d) = default {
@@ -203,7 +193,7 @@ impl Ui {
         Ok(q.interact_text()?)
     }
 
-    /// Hidden text (secrets).
+    /// Hidden input; never satisfied by `--yes`.
     pub fn password(&self, prompt: &str) -> Result<String> {
         if !self.interactive {
             return Err(self.non_interactive_err(&format!("entering {prompt:?}")));
@@ -214,7 +204,7 @@ impl Ui {
     }
 }
 
-/// Elapsed-time suffix like Vercel's `[2s]`.
+/// Elapsed time formatted as `[320ms]` / `[2.1s]`.
 pub struct Timer(Instant);
 
 impl Timer {
@@ -232,7 +222,6 @@ impl Timer {
     }
 }
 
-/// Bridge so `gozo-deploy` adapters can narrate through the UI.
 pub struct UiReporter<'a>(pub &'a Ui);
 
 impl gozo_deploy::Reporter for UiReporter<'_> {

@@ -1,5 +1,4 @@
-//! Image build shared by the docker and kubernetes adapters: resolve or
-//! generate a Dockerfile, `docker build`, optionally `docker push`.
+//! Image build shared by the docker and kubernetes adapters.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -8,10 +7,8 @@ use gozo_core::{DockerTarget, STATE_DIR};
 
 use crate::{DeployError, DeployRequest, Reporter, Result, run_capture, run_inherit, which};
 
-/// Where a generated Dockerfile lives, relative to the project root.
 pub(crate) const GENERATED_DOCKERFILE: &str = "Dockerfile";
 
-/// Image repository: the configured one, else the sanitized project name.
 pub(crate) fn repository(configured: Option<&str>, project: &str) -> String {
     match configured.map(str::trim).filter(|s| !s.is_empty()) {
         Some(c) => c.to_owned(),
@@ -41,7 +38,7 @@ pub(crate) fn sanitize_repo(name: &str) -> String {
     }
 }
 
-/// Whether the repository names a registry (`ghcr.io/x`, `localhost:5000/x`).
+/// `ghcr.io/x` and `localhost:5000/x` name a registry; `acme/x` does not.
 pub(crate) fn has_registry(repo: &str) -> bool {
     match repo.split_once('/') {
         Some((first, _)) => first.contains('.') || first.contains(':') || first == "localhost",
@@ -49,12 +46,6 @@ pub(crate) fn has_registry(repo: &str) -> bool {
     }
 }
 
-/// Full image reference.
-pub(crate) fn image_ref(repo: &str, tag: &str) -> String {
-    format!("{repo}:{tag}")
-}
-
-/// The Dockerfile that already exists: `cfg.dockerfile`, then `<root>/Dockerfile`.
 pub(crate) fn existing_dockerfile(root: &Path, cfg: &DockerTarget) -> Option<PathBuf> {
     if let Some(p) = &cfg.dockerfile {
         let path = root.join(p);
@@ -70,36 +61,18 @@ pub(crate) fn existing_dockerfile(root: &Path, cfg: &DockerTarget) -> Option<Pat
     }
 }
 
-pub(crate) fn generated_path(root: &Path) -> PathBuf {
-    root.join(STATE_DIR).join(GENERATED_DOCKERFILE)
-}
-
-pub(crate) fn context_dir(root: &Path, cfg: &DockerTarget) -> PathBuf {
-    match &cfg.context {
-        Some(c) => root.join(c),
-        None => root.to_path_buf(),
-    }
-}
-
-/// Human description of which Dockerfile a build would use, for preflight.
-pub(crate) fn dockerfile_summary(root: &Path, cfg: &DockerTarget) -> (bool, String) {
+pub(crate) fn dockerfile_summary(root: &Path, cfg: &DockerTarget) -> String {
     match existing_dockerfile(root, cfg) {
-        Some(p) => (
-            true,
-            p.strip_prefix(root).unwrap_or(&p).display().to_string(),
-        ),
-        None => (
-            true,
-            format!(
-                "none found, will generate {}/{}",
-                STATE_DIR, GENERATED_DOCKERFILE
-            ),
+        Some(p) => p.strip_prefix(root).unwrap_or(&p).display().to_string(),
+        None => format!(
+            "none found, will generate {}/{}",
+            STATE_DIR, GENERATED_DOCKERFILE
         ),
     }
 }
 
-/// The package `go build` should compile. `./cmd/<project>` when it exists,
-/// else the only package under `cmd/`, else `.` when a root `main.go` exists.
+/// `./cmd/<project>` when it exists, else the only package under `cmd/`,
+/// else `.` when a root `main.go` exists.
 pub(crate) fn main_package(root: &Path, project: &str) -> String {
     let cmd = root.join("cmd");
     if cmd.join(project).join("main.go").is_file() {
@@ -121,8 +94,8 @@ pub(crate) fn main_package(root: &Path, project: &str) -> String {
     }
 }
 
-/// A multi-stage Dockerfile for a Go service. `workspace` skips the
-/// `go mod download` layer, which needs a single go.mod at the context root.
+/// `workspace` skips the `go mod download` layer, which needs a single go.mod
+/// at the context root.
 pub(crate) fn generate_dockerfile(main_pkg: &str, workspace: bool) -> String {
     let deps = if workspace {
         "COPY . .\n"
@@ -143,7 +116,6 @@ ENTRYPOINT [\"/app\"]
     )
 }
 
-/// Resolve the Dockerfile for a build, generating one when none exists.
 pub(crate) fn ensure_dockerfile(
     root: &Path,
     project: &str,
@@ -153,7 +125,7 @@ pub(crate) fn ensure_dockerfile(
     if let Some(p) = existing_dockerfile(root, cfg) {
         return Ok(p);
     }
-    let path = generated_path(root);
+    let path = root.join(STATE_DIR).join(GENERATED_DOCKERFILE);
     let main_pkg = main_package(root, project);
     let workspace = root.join("go.work").is_file();
     let text = generate_dockerfile(&main_pkg, workspace);
@@ -183,7 +155,6 @@ fn dockerignore_excludes_state(root: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// `docker build` the image for `req`, then `docker push` when asked.
 /// A dry run still builds but never pushes.
 pub(crate) fn build(
     root: &Path,
@@ -198,7 +169,10 @@ pub(crate) fn build(
         return Err(DeployError::ToolMissing { tool: "docker" });
     }
     let dockerfile = ensure_dockerfile(root, project, cfg, r)?;
-    let context = context_dir(root, cfg);
+    let context = match &cfg.context {
+        Some(c) => root.join(c),
+        None => root.to_path_buf(),
+    };
     if !context.is_dir() {
         return Err(DeployError::Config(format!(
             "build context {} does not exist",
@@ -235,7 +209,7 @@ pub(crate) fn build(
     Ok(())
 }
 
-pub(crate) fn push_image(image: &str, verbose: bool, r: &mut dyn Reporter) -> Result<()> {
+fn push_image(image: &str, verbose: bool, r: &mut dyn Reporter) -> Result<()> {
     r.step(&format!("Pushing {image}"));
     let mut cmd = Command::new("docker");
     cmd.args(["push", image]);
@@ -246,7 +220,7 @@ pub(crate) fn push_image(image: &str, verbose: bool, r: &mut dyn Reporter) -> Re
     }
 }
 
-/// Run a probe command and return its trimmed stdout, or a one-line reason.
+/// Trimmed stdout on success, else a one-line reason.
 pub(crate) fn probe(mut cmd: Command, r: &mut dyn Reporter) -> std::result::Result<String, String> {
     r.command(&crate::format_command(&cmd));
     let out = match cmd.output() {
@@ -268,7 +242,6 @@ pub(crate) fn probe(mut cmd: Command, r: &mut dyn Reporter) -> std::result::Resu
     Err(line)
 }
 
-/// Preflight entries shared by every adapter that builds with docker.
 pub(crate) fn docker_checks(r: &mut dyn Reporter) -> Vec<(String, bool, String)> {
     let mut out = Vec::new();
     if !which("docker") {
@@ -305,7 +278,6 @@ pub(crate) fn docker_checks(r: &mut dyn Reporter) -> Vec<(String, bool, String)>
 mod tests {
     use super::*;
 
-    /// A unique scratch directory, removed on drop (this crate has no temp-dir dependency).
     struct Scratch(PathBuf);
     impl Scratch {
         fn new(tag: &str) -> Self {
@@ -374,19 +346,14 @@ mod tests {
     fn main_package_detection() {
         let dir = Scratch::new("main");
         let root = dir.path();
-        // nothing: falls back to ./cmd/<project>
         assert_eq!(main_package(root, "svc"), "./cmd/svc");
-        // a single cmd package wins
         std::fs::create_dir_all(root.join("cmd/worker")).unwrap();
         std::fs::write(root.join("cmd/worker/main.go"), "package main").unwrap();
         assert_eq!(main_package(root, "svc"), "./cmd/worker");
-        // several: prefer the one named after the project
         std::fs::create_dir_all(root.join("cmd/svc")).unwrap();
         std::fs::write(root.join("cmd/svc/main.go"), "package main").unwrap();
         assert_eq!(main_package(root, "svc"), "./cmd/svc");
-        // several without a match: fall back to ./cmd/<project>
         assert_eq!(main_package(root, "other"), "./cmd/other");
-        // root main.go only
         let dir2 = Scratch::new("root");
         std::fs::write(dir2.path().join("main.go"), "package main").unwrap();
         assert_eq!(main_package(dir2.path(), "svc"), ".");
@@ -404,7 +371,6 @@ mod tests {
             Some(root.join("Dockerfile"))
         );
         cfg.dockerfile = Some("build/Dockerfile.prod".into());
-        // configured but missing: fall back to ./Dockerfile
         assert_eq!(
             existing_dockerfile(root, &cfg),
             Some(root.join("Dockerfile"))

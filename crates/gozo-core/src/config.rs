@@ -22,7 +22,7 @@ pub struct Config {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectSection {
-    /// Human name. Defaults to the last element of the root module path.
+    /// Defaults to the last element of the root module path.
     pub name: Option<String>,
 }
 
@@ -31,34 +31,31 @@ pub struct ProjectSection {
 pub struct DevSection {
     /// Main package to run, e.g. `./cmd/api`. Auto-detected when absent.
     pub cmd: Option<String>,
-    /// Extra arguments passed to the program.
     pub args: Vec<String>,
-    /// Port the app listens on, used for the "ready" message. `PORT` is set.
+    /// Exported as `PORT` and used for the "ready" message.
     pub port: Option<u16>,
-    /// Env files to load, in order; later files win. Defaults to
-    /// `.env`, `.env.local`, `.env.development`, `.env.development.local`.
+    /// Env files in load order (later wins). Defaults to `.env`, `.env.local`,
+    /// `.env.development`, `.env.development.local`.
     pub env: Vec<String>,
-    /// Glob patterns that trigger a restart. Defaults to Go sources and go.mod.
+    /// Globs that trigger a restart. Defaults to Go sources and go.mod.
     pub watch: Vec<String>,
-    /// Glob patterns that never trigger a restart.
     pub ignore: Vec<String>,
-    /// Docker Compose file to bring up before starting (`docker compose up -d`).
+    /// Compose file to `docker compose up -d` before starting.
     pub services: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct BuildSection {
-    /// Main packages to build. Defaults to every `main` package under `cmd/`.
+    /// Defaults to every `main` package under `cmd/`.
     pub cmds: Vec<String>,
-    /// Output directory.
     pub output: String,
-    /// Extra `-ldflags`. gozo always injects `main.version`, `main.commit`, `main.date`.
+    /// Extra `-ldflags`; gozo always injects `main.version`, `main.commit`, `main.date`.
     pub ldflags: Option<String>,
     pub trimpath: bool,
-    /// Force CGO on or off. Unset leaves the environment alone.
+    /// Unset leaves `CGO_ENABLED` alone.
     pub cgo: Option<bool>,
-    /// Cross-compile targets as `GOOS/GOARCH`. Empty means the host.
+    /// `GOOS/GOARCH` pairs. Empty means the host.
     pub targets: Vec<String>,
 }
 
@@ -75,7 +72,7 @@ impl Default for BuildSection {
     }
 }
 
-/// A task is either a bare command string or a table with options.
+/// Either a bare command string or a table with options.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Task {
@@ -88,7 +85,7 @@ pub enum Task {
 pub struct TaskDef {
     pub cmd: String,
     pub description: Option<String>,
-    /// Working directory relative to the project root.
+    /// Relative to the project root.
     pub cwd: Option<String>,
     pub env: BTreeMap<String, String>,
     /// Tasks to run first, in order.
@@ -110,7 +107,7 @@ impl Task {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DeploySection {
-    /// Default target when the directory is not linked: `docker` or `kubernetes`.
+    /// `docker` or `kubernetes`, used when the directory is not linked.
     pub target: Option<String>,
     pub docker: DockerTarget,
     pub kubernetes: KubernetesTarget,
@@ -121,17 +118,15 @@ pub struct DeploySection {
 pub struct DockerTarget {
     /// Image repository, e.g. `ghcr.io/acme/api`. Defaults to the project name.
     pub image: Option<String>,
-    /// Dockerfile path. When absent and no Dockerfile exists, gozo generates one.
+    /// When absent and no Dockerfile exists, gozo generates one.
     pub dockerfile: Option<String>,
-    /// Build context, defaults to the project root.
     pub context: Option<String>,
     /// e.g. `linux/amd64`.
     pub platform: Option<String>,
-    /// Push after build.
     pub push: bool,
-    /// For local `docker run` deployments: container name. Defaults to project name.
+    /// Defaults to the project name.
     pub container: Option<String>,
-    /// Port mappings for local runs, e.g. `8080:8080`.
+    /// `docker run -p` mappings, e.g. `8080:8080`.
     pub ports: Vec<String>,
 }
 
@@ -140,13 +135,13 @@ pub struct DockerTarget {
 pub struct KubernetesTarget {
     pub context: Option<String>,
     pub namespace: Option<String>,
-    /// Deployment name. Defaults to the project name.
+    /// Defaults to the project name.
     pub deployment: Option<String>,
-    /// Container name inside the pod. Defaults to the deployment name.
+    /// Defaults to the deployment name.
     pub container: Option<String>,
-    /// Directory of manifests to `kubectl apply -f` before setting the image.
+    /// Directory to `kubectl apply -f` before setting the image.
     pub manifests: Option<String>,
-    /// Image repository to push to. Falls back to `deploy.docker.image`.
+    /// Falls back to `deploy.docker.image`.
     pub image: Option<String>,
 }
 
@@ -155,7 +150,6 @@ impl Config {
         root.join(FILE)
     }
 
-    /// Load `gozo.toml` if present.
     pub fn load(root: &Path) -> Result<Option<Config>> {
         let path = Self::path(root);
         if !path.is_file() {
@@ -170,12 +164,10 @@ impl Config {
             })
     }
 
-    /// Whether `gozo.toml` exists.
     pub fn exists(root: &Path) -> bool {
         Self::path(root).is_file()
     }
 
-    /// A commented starter file for `gozo init`.
     pub fn template(name: &str, cmd: Option<&str>) -> String {
         let cmd_line = match cmd {
             Some(c) => format!("cmd = \"{c}\""),

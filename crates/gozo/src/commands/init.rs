@@ -1,6 +1,3 @@
-//! `gozo init`: create `gozo.toml` (and a Go module, when the directory has
-//! none) so every other command has something to work with.
-
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -40,7 +37,6 @@ struct InitDoc<'a> {
     name: &'a str,
     module: &'a str,
     created: &'a [String],
-    /// True when gozo.toml already existed and nothing was written.
     already_initialized: bool,
 }
 
@@ -110,7 +106,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     let module = match existing_module {
         Some(m) => m,
         None => {
-            // No go.mod: create a module and a minimal main package.
             let default_module = git::remote_url(&target)
                 .and_then(|u| module_path_from_remote(&u))
                 .unwrap_or_else(|| format!("example.com/{}", sanitize_segment(&dir_name)));
@@ -173,7 +168,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     ctx.ui
         .success(format!("Created {}", gozo_core::config::FILE));
 
-    // Pick up the new go.mod / gozo.toml when we initialised the current project.
     if target == ctx.cwd || ctx.cwd.starts_with(&target) {
         ctx.reload_project()?;
     }
@@ -203,12 +197,11 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-/// Turn a git remote URL into a Go module path, e.g.
-/// `git@github.com:acme/api.git` -> `github.com/acme/api`.
-pub fn module_path_from_remote(url: &str) -> Option<String> {
+/// `git@github.com:acme/api.git` -> `github.com/acme/api`; `None` for
+/// local paths or anything that is not `host/owner/repo`.
+fn module_path_from_remote(url: &str) -> Option<String> {
     let url = url.trim();
     let rest = if let Some(r) = url.strip_prefix("git@") {
-        // git@host:owner/repo.git
         r.replacen(':', "/", 1)
     } else {
         let r = url
@@ -231,7 +224,7 @@ pub fn module_path_from_remote(url: &str) -> Option<String> {
     Some(format!("{host}/{owner}/{repo}"))
 }
 
-/// Make a directory name safe as a module path element or package name.
+/// Lowercase `[a-z0-9_-]` only; `app` when nothing is left.
 fn sanitize_segment(s: &str) -> String {
     let out: String = s
         .chars()

@@ -1,18 +1,15 @@
-//! `gozo test` — `go test -json` across every module with a gotestsum-like
-//! summary: one line per package as it finishes, failures replayed at the
-//! end, and a single `N passed, N failed, N skipped in Ns` line.
-
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{ExitCode, Stdio};
 
-use crate::style::{Mark, bold, dim, green, mark, red, yellow};
 use anyhow::Context as _;
 use gozo_go::{TestAction, TestEvent};
 use serde::Serialize;
 
+use super::util::{display_rel, exit_for};
 use crate::ctx::Ctx;
+use crate::style::{Mark, bold, dim, green, mark, red, yellow};
 use crate::ui::Timer;
 
 #[derive(Debug, clap::Args)]
@@ -66,7 +63,6 @@ enum PkgStatus {
     Pass,
     Fail,
     Skip,
-    /// `[no test files]`
     NoTests,
 }
 
@@ -79,7 +75,7 @@ struct PkgResult {
     tests: Vec<TestResult>,
     #[serde(skip)]
     test_index: HashMap<String, usize>,
-    /// Output not attributed to a test (build errors, panics, TestMain).
+    /// Output not attributed to a test (panics, TestMain, `[no test files]`).
     #[serde(skip)]
     output: Vec<String>,
     #[serde(skip)]
@@ -109,7 +105,6 @@ struct Summary {
     elapsed: f64,
 }
 
-/// Folds test2json events into per-package results.
 #[derive(Default)]
 struct Collector {
     packages: Vec<PkgResult>,
@@ -143,7 +138,7 @@ impl Collector {
         &mut self.packages[idx]
     }
 
-    /// Apply one event. Returns the index of a package that just finished.
+    /// Returns the index of the package this event finished, if any.
     fn handle(&mut self, ev: &TestEvent) -> Option<usize> {
         let action = ev.action();
         let pkg_name = ev.package_path().map(str::to_owned)?;
@@ -259,7 +254,7 @@ impl Collector {
     }
 }
 
-/// Drop the `=== RUN` style frames and trailing blank lines from captured output.
+/// Drop `=== RUN`/`PAUSE`/`CONT` frames and trailing blank lines.
 fn tidy_output(lines: Vec<String>) -> Vec<String> {
     let mut out: Vec<String> = lines
         .into_iter()
@@ -278,8 +273,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     let project = ctx.project()?;
     let root = project.root.clone();
 
-    // Explicit patterns run once, relative to the module containing cwd;
-    // the default `./...` runs in every module.
+    // Explicit patterns run once from cwd; the default `./...` runs in every module.
     let runs: Vec<(PathBuf, Vec<String>)> = if args.packages.is_empty() {
         project
             .modules
@@ -388,7 +382,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         }
     }
 
-    // Packages that never reached a terminal event (e.g. -failfast, crashes).
+    // Packages that never reached a terminal event (-failfast, crashes).
     for (idx, p) in col.packages.iter().enumerate() {
         if p.status != PkgStatus::Running && !reported.contains(&idx) && !ctx.json {
             print_package(p, args.verbose, ctx.ui.color);
@@ -415,21 +409,8 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         print_failures(&col.failures, ctx.ui.color);
         print_summary(&summary, ok, &timer.elapsed(), ctx.ui.color);
     }
-    Ok(if ok {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    })
+    Ok(exit_for(ok))
 }
-
-fn display_rel(root: &Path, path: &Path) -> String {
-    let p = path.strip_prefix(root).unwrap_or(path);
-    let s = p.to_string_lossy().replace('\\', "/");
-    if s.is_empty() { ".".to_owned() } else { s }
-}
-
-// ---------------------------------------------------------------------------
-// human output
 
 fn secs(s: f64) -> String {
     format!("{s:.2}s")

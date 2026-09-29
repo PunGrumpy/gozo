@@ -1,8 +1,4 @@
-//! Colors and status marks for **stdout** reports (doctor, check, test, build, ...).
-//!
-//! `ui.rs` styles stderr chatter; this module styles the primary result that
-//! goes to stdout. Both honor `--no-color` / `NO_COLOR` through owo-colors'
-//! global override, and `mark` degrades to plain ASCII words without color.
+//! Colors and status marks for stdout reports (`ui.rs` covers stderr).
 
 use owo_colors::{OwoColorize, Stream::Stdout};
 
@@ -34,7 +30,7 @@ pub enum Mark {
     Warn,
 }
 
-/// `✓`/`✗`/`-`/`!` with color, plain ASCII words without (matches `Ui`).
+/// `✓`/`✗`/`-`/`!` with color, `OK`/`FAIL`/`-`/`!` without.
 pub fn mark(color: bool, which: Mark) -> String {
     match (which, color) {
         (Mark::Ok, true) => green("✓"),

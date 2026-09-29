@@ -5,23 +5,17 @@ use serde::Serialize;
 
 use crate::command::GoError;
 
-/// A Go release version such as `1.27.1`, `1.27`, or `1.27rc1`.
-///
-/// Ordering follows Go's own rules loosely: the numeric components compare
-/// first, and a pre-release suffix sorts before the final release.
+/// Ordering: numeric components first; a pre-release sorts before the final release.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct GoVersion {
     pub major: u32,
     pub minor: u32,
     pub patch: u32,
-    /// `rc1`, `beta2`, or empty for a final release.
     pub prerelease: String,
-    /// The original string, for example `go1.27.1` or `1.27`.
     pub raw: String,
 }
 
 impl GoVersion {
-    /// Parse `1.27.1`, `go1.27.1`, `1.27`, `1.27rc1`.
     pub fn parse(s: &str) -> Result<GoVersion, GoError> {
         let raw = s.trim();
         let body = raw.strip_prefix("go").unwrap_or(raw);
@@ -45,7 +39,6 @@ impl GoVersion {
         })
     }
 
-    /// Parse the output of `go version`, e.g. `go version go1.27.1 linux/amd64`.
     pub fn parse_go_version_output(out: &str) -> Result<GoVersion, GoError> {
         out.split_whitespace()
             .find(|w| w.starts_with("go") && w[2..].starts_with(|c: char| c.is_ascii_digit()))
@@ -53,7 +46,6 @@ impl GoVersion {
             .unwrap_or_else(|| Err(GoError::Version(out.trim().to_owned())))
     }
 
-    /// Whether this toolchain satisfies a `go` directive requirement.
     pub fn satisfies(&self, required: &GoVersion) -> bool {
         self >= required
     }

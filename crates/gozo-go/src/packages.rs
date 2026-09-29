@@ -33,7 +33,6 @@ pub struct PackageModule {
 }
 
 impl Go {
-    /// `go list -json=<fields> <pattern>` run in `dir`.
     pub fn list_packages(&self, dir: &Path, pattern: &str) -> Result<Vec<PackageInfo>, GoError> {
         self.run_json_stream(
             dir,

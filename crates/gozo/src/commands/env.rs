@@ -1,6 +1,3 @@
-//! `gozo env`: per-environment variables stored under `.gozo/env/`, with the
-//! verbs of `vercel env` (ls, add, rm, update, pull, run).
-
 use std::io::{IsTerminal, Read as _};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -9,6 +6,7 @@ use anyhow::Context as _;
 use gozo_core::{EnvStore, Environment, dotenv, envstore, link};
 use serde::Serialize;
 
+use super::util::{exit_code, exit_for, plural};
 use crate::ctx::Ctx;
 
 #[derive(Debug, clap::Args)]
@@ -71,7 +69,7 @@ pub struct SetArgs {
     /// Overwrite an existing variable without asking.
     #[arg(long)]
     pub force: bool,
-    /// Accepted for parity with other CLIs: gozo never prints values unless --show-values.
+    /// Accepted for parity with other CLIs; values are always masked unless --show-values.
     #[arg(long)]
     pub sensitive: bool,
 }
@@ -126,13 +124,9 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     }
 }
 
-fn parse_env(s: &str) -> anyhow::Result<Environment> {
-    Ok(s.parse::<Environment>()?)
-}
-
 fn envs_from(arg: Option<&str>) -> anyhow::Result<Vec<Environment>> {
     Ok(match arg {
-        Some(e) => vec![parse_env(e)?],
+        Some(e) => vec![e.parse()?],
         None => Environment::ALL.to_vec(),
     })
 }
@@ -192,7 +186,7 @@ fn ls(
     Ok(ExitCode::SUCCESS)
 }
 
-/// The value for `add`/`update`: flag, piped stdin, or a hidden prompt.
+/// `--value`, else piped stdin, else a hidden prompt.
 fn read_value(ctx: &Ctx, explicit: Option<String>, key: &str) -> anyhow::Result<String> {
     if let Some(v) = explicit {
         return Ok(v);
@@ -213,13 +207,10 @@ fn strip_one_newline(s: &str) -> &str {
         .unwrap_or(s)
 }
 
-/// Pick target environments: the argument, or all three (asked when interactive).
+/// The argument, else all three (multi-select when interactive).
 fn choose_envs(ctx: &Ctx, arg: Option<&str>, key: &str) -> anyhow::Result<Vec<Environment>> {
-    if let Some(e) = arg {
-        return Ok(vec![parse_env(e)?]);
-    }
-    if ctx.ui.yes || !ctx.ui.interactive {
-        return Ok(Environment::ALL.to_vec());
+    if arg.is_some() || ctx.ui.yes || !ctx.ui.interactive {
+        return envs_from(arg);
     }
     let items: Vec<String> = Environment::ALL.iter().map(|e| e.to_string()).collect();
     let picked = dialoguer::MultiSelect::new()
@@ -284,11 +275,7 @@ fn set(ctx: &mut Ctx, store: &EnvStore, a: SetArgs, update: bool) -> anyhow::Res
             list.join(", ")
         ));
     }
-    Ok(if written.is_empty() {
-        ExitCode::from(1)
-    } else {
-        ExitCode::SUCCESS
-    })
+    Ok(exit_for(!written.is_empty()))
 }
 
 fn rm(
@@ -355,7 +342,7 @@ fn pull(
     file: Option<PathBuf>,
     environment: &str,
 ) -> anyhow::Result<ExitCode> {
-    let env = parse_env(environment)?;
+    let env: Environment = environment.parse()?;
     let file = file.unwrap_or_else(|| PathBuf::from(".env.local"));
     let path = if file.is_absolute() {
         file.clone()
@@ -377,7 +364,6 @@ fn pull(
     std::fs::write(&path, dotenv::render(&vars, Some(&header)))
         .with_context(|| format!("could not write {}", path.display()))?;
 
-    // Keep secrets out of git when the file lives inside the repository.
     let mut ignored = false;
     if root.join(".git").exists() {
         if let Ok(rel) = path.strip_prefix(root) {
@@ -405,7 +391,7 @@ fn pull(
                 ""
             },
             vars.len(),
-            if vars.len() == 1 { "" } else { "s" }
+            plural(vars.len())
         ));
         ctx.out.line(path.display().to_string());
     }
@@ -418,7 +404,7 @@ fn run_cmd(
     environment: &str,
     command: &[String],
 ) -> anyhow::Result<ExitCode> {
-    let env = parse_env(environment)?;
+    let env: Environment = environment.parse()?;
     let Some((program, rest)) = command.split_first() else {
         anyhow::bail!("nothing to run\n  usage: gozo env run [-e ENV] -- CMD [ARGS...]");
     };
@@ -435,13 +421,6 @@ fn run_cmd(
         .status()
         .with_context(|| format!("could not run `{program}`"))?;
     Ok(exit_code(status))
-}
-
-pub fn exit_code(status: std::process::ExitStatus) -> ExitCode {
-    match status.code() {
-        Some(c) => ExitCode::from(c.clamp(0, 255) as u8),
-        None => ExitCode::from(1),
-    }
 }
 
 #[cfg(test)]

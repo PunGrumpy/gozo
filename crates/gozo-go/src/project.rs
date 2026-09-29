@@ -1,5 +1,3 @@
-//! Locating the Go project that contains a directory.
-
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -10,31 +8,23 @@ use crate::gomod::{GoMod, GoWork};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProjectKind {
-    /// A single module rooted at go.mod.
     Module,
-    /// A multi-module workspace rooted at go.work.
     Workspace,
 }
 
-/// A Go project: either one module or a go.work workspace.
 #[derive(Debug, Clone, Serialize)]
 pub struct Project {
     pub kind: ProjectKind,
-    /// Directory containing go.work (workspace) or go.mod (module).
     pub root: PathBuf,
-    /// Parsed go.work, when `kind` is `Workspace`.
     pub work: Option<GoWork>,
-    /// Every module in the project, in go.work `use` order (or just the one).
     pub modules: Vec<ProjectModule>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProjectModule {
-    /// Absolute directory of the module.
     pub dir: PathBuf,
-    /// Directory relative to the project root, `.` for the root module.
+    /// Relative to the project root; `.` for the root module.
     pub rel: String,
-    /// Parsed go.mod, or the error string if `go mod edit -json` failed.
     pub gomod: Result<GoMod, String>,
 }
 
@@ -49,10 +39,8 @@ impl ProjectModule {
 }
 
 impl Project {
-    /// Walk up from `start` looking for go.work first, then go.mod.
-    ///
     /// A go.work anywhere above `start` wins over a nearer go.mod, matching
-    /// how the `go` command itself resolves GOWORK.
+    /// how `go` resolves GOWORK.
     pub fn discover(go: &Go, start: &Path) -> Result<Project, GoError> {
         let start = start.canonicalize()?;
         let mut nearest_mod: Option<PathBuf> = None;
@@ -98,8 +86,6 @@ impl Project {
         })
     }
 
-    /// A short human name: the last path element of the root module, or the
-    /// root directory name for workspaces without a root module.
     pub fn name(&self) -> String {
         self.modules
             .iter()

@@ -1,6 +1,3 @@
-//! `gozo api`: read-only JSON views of project state for scripts and agents,
-//! in the spirit of `vercel api`.
-
 use std::path::Path;
 use std::process::ExitCode;
 
@@ -26,8 +23,7 @@ pub struct Args {
 
 const SCHEMA: &str = "gozo.api/v1";
 
-/// Every resource with a one-line description.
-pub const RESOURCES: [(&str, &str); 11] = [
+const RESOURCES: [(&str, &str); 11] = [
     (
         "project",
         "name, root, kind, modules, Go version and link target",
@@ -108,7 +104,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-pub fn resource_names() -> Vec<&'static str> {
+fn resource_names() -> Vec<&'static str> {
     RESOURCES.iter().map(|(n, _)| *n).collect()
 }
 

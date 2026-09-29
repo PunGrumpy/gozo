@@ -1,6 +1,3 @@
-//! `gozo run [TASK] [ARGS...]` — run a task from gozo.toml `[tasks]`, after
-//! its `deps`, through the shell. With no task, list the tasks.
-
 use std::collections::BTreeMap;
 use std::process::{Command, ExitCode};
 
@@ -153,9 +150,8 @@ fn available(tasks: &BTreeMap<String, Task>) -> String {
     }
 }
 
-/// Dependency-first execution order ending with `name`. Errors on unknown
-/// tasks and cycles.
-pub fn plan(tasks: &BTreeMap<String, Task>, name: &str) -> anyhow::Result<Vec<String>> {
+/// Dependency-first order ending with `name`; errors on unknown tasks and cycles.
+fn plan(tasks: &BTreeMap<String, Task>, name: &str) -> anyhow::Result<Vec<String>> {
     fn visit(
         tasks: &BTreeMap<String, Task>,
         name: &str,
@@ -190,8 +186,7 @@ pub fn plan(tasks: &BTreeMap<String, Task>, name: &str) -> anyhow::Result<Vec<St
     Ok(done)
 }
 
-/// The task command with shell-escaped extra arguments appended.
-pub fn command_line(cmd: &str, extra: &[String]) -> String {
+fn command_line(cmd: &str, extra: &[String]) -> String {
     if extra.is_empty() {
         cmd.to_owned()
     } else {

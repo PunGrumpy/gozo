@@ -1,15 +1,13 @@
-//! `gozo tool` — manage Go 1.24+ `tool` directives in go.mod: list, add,
-//! remove, run, and check for updates.
-
 use std::path::{Path, PathBuf};
 use std::process::{ExitCode, Stdio};
 
-use crate::style::{Mark, bold, dim, green, mark};
 use anyhow::Context as _;
 use gozo_go::{GoMod, ProjectModule};
 use serde::Serialize;
 
+use super::util::{display_rel, exit_for, plural};
 use crate::ctx::Ctx;
+use crate::style::{Mark, bold, dim, green, mark};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -62,10 +60,10 @@ pub enum ToolCmd {
 
 #[derive(Debug, Clone, Serialize)]
 struct ToolEntry {
-    /// Last element of the path, what `gozo tool run <name>` accepts.
+    /// Last path element; what `gozo tool run <name>` accepts.
     name: String,
     path: String,
-    /// The `require` entry providing the tool (longest path prefix), if any.
+    /// The `require` providing the tool (longest path prefix), if any.
     module: Option<String>,
     version: Option<String>,
     /// Module directory relative to the project root.
@@ -96,7 +94,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     }
 }
 
-/// Tools declared in one go.mod, with the version of the module providing each.
 fn tools_of(gomod: &GoMod, dir: &str) -> Vec<ToolEntry> {
     gomod
         .tool
@@ -119,8 +116,8 @@ fn tools_of(gomod: &GoMod, dir: &str) -> Vec<ToolEntry> {
         .collect()
 }
 
+/// Re-reads go.mod so add/rm/update see their own changes.
 fn module_tools(ctx: &Ctx, module: &ProjectModule) -> anyhow::Result<Vec<ToolEntry>> {
-    // Re-read so add/rm/update see the fresh go.mod.
     let gomod = ctx
         .go
         .mod_edit(&module.dir)
@@ -128,7 +125,6 @@ fn module_tools(ctx: &Ctx, module: &ProjectModule) -> anyhow::Result<Vec<ToolEnt
     Ok(tools_of(&gomod, &module.rel))
 }
 
-/// Match a tool by full path or by its last path element.
 fn find_tool<'a>(tools: &'a [ToolEntry], name: &str) -> anyhow::Result<&'a ToolEntry> {
     if let Some(t) = tools.iter().find(|t| t.path == name) {
         return Ok(t);
@@ -199,7 +195,6 @@ fn select_module(ctx: &Ctx, wanted: Option<&Path>) -> anyhow::Result<ProjectModu
         .context("no usable module in this project (every go.mod failed to parse)")
 }
 
-/// List every module's tools, or only `only`'s when `--module` was given.
 fn ls(ctx: &Ctx, only: Option<&ProjectModule>) -> anyhow::Result<ExitCode> {
     let project = ctx.project()?;
     let multi = project.modules.len() > 1 && only.is_none();
@@ -342,7 +337,7 @@ fn outdated(ctx: &Ctx, root: &Path, module: &ProjectModule) -> anyhow::Result<Ex
         println!(
             "  {} {n} tool{} up to date",
             mark(ctx.ui.color, Mark::Ok),
-            if n == 1 { "" } else { "s" }
+            plural(n)
         );
     } else {
         let owned: Vec<ToolEntry> = stale.iter().map(|t| (*t).clone()).collect();
@@ -350,11 +345,7 @@ fn outdated(ctx: &Ctx, root: &Path, module: &ProjectModule) -> anyhow::Result<Ex
         println!();
         println!("  {} run `gozo tool update` to update all", dim("hint:"));
     }
-    Ok(if stale.is_empty() {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    })
+    Ok(exit_for(stale.is_empty()))
 }
 
 fn update(
@@ -447,12 +438,6 @@ fn print_table(tools: &[ToolEntry], show_dir: bool, show_update: bool) {
         }
         println!("{}", line.trim_end());
     }
-}
-
-fn display_rel(root: &Path, path: &Path) -> String {
-    let p = path.strip_prefix(root).unwrap_or(path);
-    let s = p.to_string_lossy().replace('\\', "/");
-    if s.is_empty() { ".".to_owned() } else { s }
 }
 
 #[cfg(test)]

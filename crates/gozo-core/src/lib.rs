@@ -1,6 +1,4 @@
-//! Project-level state for gozo: `gozo.toml`, the `.gozo/` link directory,
-//! per-environment env files, deployment history, and helpers shared by
-//! every command.
+//! Project-level state: `gozo.toml`, the `.gozo/` link directory, env files and deployment history.
 
 pub mod config;
 pub mod deployments;
@@ -18,7 +16,6 @@ pub use envstore::{EnvStore, Environment};
 pub use link::{Link, Target};
 pub use packages::MainPackage;
 
-/// Name of the per-project directory gozo keeps local state in.
 pub const STATE_DIR: &str = ".gozo";
 
 #[derive(Debug, thiserror::Error)]

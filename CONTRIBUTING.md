@@ -2,24 +2,24 @@
 
 ## Prerequisites
 
-- Rust stable (see `rust-toolchain.toml`), Go 1.24 or newer, Node 22+ and Bun 1.4 (see `packageManager`).
-- `bun install` once; `cargo build` for the CLI. A husky pre-commit hook runs `ultracite fix`.
+- Rust stable (see `rust-toolchain.toml`), Go 1.24 or newer, Node 22 or newer, and Bun 1.4 (see `packageManager`)
+- `bun install` once, then `cargo build` for the CLI. A husky pre-commit hook runs `ultracite fix`
 
 ## Everyday commands
 
 | What | Command |
 | --- | --- |
-| Build the CLI | `cargo build -p gozo` (or `bun run gozo -- doctor` to build and run) |
+| Build the CLI | `cargo build -p gozo`, or `bun run gozo -- doctor` to build and run |
 | Rust tests | `cargo test --workspace` |
 | Everything CI checks | `bun run verify` (`turbo run quality lint check-types`) |
 | Format Rust | `bun run fix:rust` (`cargo fmt --all`) |
-| Lint + format JS | `bun run check` / `bun run fix` (ultracite) |
+| Lint and format JS | `bun run check` and `bun run fix` (ultracite) |
 | Try against a Go project | `./target/debug/gozo -C path/to/project doctor` |
-| Try the npm launcher | `./packages/gozo/bin/gozo --help` (uses `target/release` or `target/debug` in a checkout; `GOZO_BINARY_PATH` overrides) |
+| Try the npm launcher | `./packages/gozo/bin/gozo --help`, which uses `target/` in a checkout. `GOZO_BINARY_PATH` overrides it |
 
 ## Repository layout
 
-Layout follows [vercel/turborepo](https://github.com/vercel/turborepo).
+The layout follows [vercel/turborepo](https://github.com/vercel/turborepo):
 
 ```text
 crates/gozo          CLI (clap)
@@ -32,17 +32,17 @@ scripts/             release helpers (version sync, platform packaging, publishi
 .github/             turborepo-style workflows and composite actions
 ```
 
-Turborepo orchestrates tasks, Bun is the package manager, Ultracite lints and formats JavaScript, and changesets drive versioning (see [RELEASE.md](RELEASE.md)).
+Turborepo orchestrates tasks and Bun installs packages. Ultracite lints and formats JavaScript. Changesets drive versioning, described in [RELEASE.md](RELEASE.md).
 
 ## Adding or changing a command
 
-- Commands live in `crates/gozo/src/commands/<name>.rs`, one module per command, with its `clap::Args`.
-- Every fact about a Go project comes from `crates/gozo-go` (typed wrappers around `go`). Never shell out to `go` from a command directly.
-- Every command supports `--json` with a `schema: "gozo.<name>/v1"` document. Bump the schema when you change a field.
-- Human output: stderr for progress (`ctx.ui`), stdout for the result (`ctx.out`). See `commands/doctor.rs` as the reference.
-- Add a changeset: `bunx changeset`.
+- Commands live in `crates/gozo/src/commands/<name>.rs`, one module per command, with its `clap::Args`
+- Every fact about a Go project comes from `crates/gozo-go`, the typed wrapper around `go`. Never shell out to `go` from a command directly
+- Every command supports `--json` with a `schema: "gozo.<name>/v1"` document. Bump the schema when you change a field
+- Progress goes to stderr through `ctx.ui` and the result goes to stdout through `ctx.out`. `commands/doctor.rs` is the reference
+- Add a changeset with `bunx changeset`
 
 ## Pull requests
 
-- Title follows Conventional Commits with an uppercase subject: `feat: Add gozo env run`. Scopes are not used.
-- Paste the human and `--json` output of the affected commands in the PR description.
+- The title follows Conventional Commits with an uppercase subject and no scope: `feat: Add gozo env run`
+- Paste the human output and the `--json` output of the affected commands in the description

@@ -17,3 +17,4 @@ pub mod status;
 pub mod test;
 pub mod tool;
 pub mod update;
+pub mod util;

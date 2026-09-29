@@ -35,8 +35,6 @@ pub enum GoError {
     Io(#[from] std::io::Error),
 }
 
-/// Raw result of a `go` invocation. Callers that need to tolerate failure
-/// (for example an offline `go mod tidy -diff`) inspect this directly.
 #[derive(Debug, Clone)]
 pub struct GoOutput {
     pub status: i32,
@@ -48,16 +46,26 @@ impl GoOutput {
     pub fn success(&self) -> bool {
         self.status == 0
     }
+
+    fn checked(self, args: &str) -> Result<GoOutput, GoError> {
+        if self.success() {
+            Ok(self)
+        } else {
+            Err(GoError::Failed {
+                args: args.to_owned(),
+                status: self.status,
+                stderr: self.stderr.trim().to_owned(),
+            })
+        }
+    }
 }
 
-/// A located `go` binary.
 #[derive(Debug, Clone)]
 pub struct Go {
     pub bin: PathBuf,
 }
 
 impl Go {
-    /// Locate `go` on PATH, or under `$GOROOT/bin` as a fallback.
     pub fn find() -> Result<Go, GoError> {
         if let Some(path) = std::env::var_os("PATH") {
             for dir in std::env::split_paths(&path) {
@@ -85,7 +93,6 @@ impl Go {
         self.run_env(dir, args, &[])
     }
 
-    /// Like [`Self::run`] but with extra environment variables.
     pub fn run_env<I, S>(
         &self,
         dir: &Path,
@@ -96,18 +103,14 @@ impl Go {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let args: Vec<String> = args
-            .into_iter()
-            .map(|a| a.as_ref().to_string_lossy().into_owned())
-            .collect();
-        let joined = args.join(" ");
+        let args = strings(args);
         let mut cmd = Command::new(&self.bin);
         cmd.args(&args).current_dir(dir);
         for (k, v) in env {
             cmd.env(k, v);
         }
         let out = cmd.output().map_err(|source| GoError::Spawn {
-            args: joined,
+            args: args.join(" "),
             source,
         })?;
         Ok(GoOutput {
@@ -117,9 +120,8 @@ impl Go {
         })
     }
 
-    /// Run `go <args>` with `GOTOOLCHAIN=local`, for commands that only read
-    /// files (`env`, `mod edit`, `work edit`, `version`) and must never start
-    /// a toolchain download just because go.mod asks for a newer Go.
+    /// Run with `GOTOOLCHAIN=local`, for read-only commands (`env`, `mod edit`,
+    /// `version`) that must never start a toolchain download.
     pub fn run_local<I, S>(&self, dir: &Path, args: I) -> Result<GoOutput, GoError>
     where
         I: IntoIterator<Item = S>,
@@ -128,115 +130,57 @@ impl Go {
         self.run_env(dir, args, &[("GOTOOLCHAIN", "local")])
     }
 
-    /// Run `go <args>` and turn a non-zero exit into an error.
     pub fn run_ok<I, S>(&self, dir: &Path, args: I) -> Result<GoOutput, GoError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let args: Vec<String> = args
-            .into_iter()
-            .map(|a| a.as_ref().to_string_lossy().into_owned())
-            .collect();
-        let joined = args.join(" ");
-        let out = self.run(dir, &args)?;
-        if out.success() {
-            Ok(out)
-        } else {
-            Err(GoError::Failed {
-                args: joined,
-                status: out.status,
-                stderr: out.stderr.trim().to_owned(),
-            })
-        }
+        let args = strings(args);
+        self.run(dir, &args)?.checked(&args.join(" "))
     }
 
-    /// Run `go <args>` and deserialize stdout as a single JSON document.
-    pub fn run_json<T, I, S>(&self, dir: &Path, args: I) -> Result<T, GoError>
-    where
-        T: serde::de::DeserializeOwned,
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
-    {
-        let args: Vec<String> = args
-            .into_iter()
-            .map(|a| a.as_ref().to_string_lossy().into_owned())
-            .collect();
-        let joined = args.join(" ");
-        let out = self.run_ok(dir, &args)?;
-        serde_json::from_str(&out.stdout).map_err(|source| GoError::Parse {
-            args: joined,
-            source,
-        })
-    }
-
-    /// Like [`Self::run_json`] but via [`Self::run_local`].
     pub fn run_json_local<T, I, S>(&self, dir: &Path, args: I) -> Result<T, GoError>
     where
         T: serde::de::DeserializeOwned,
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let args: Vec<String> = args
-            .into_iter()
-            .map(|a| a.as_ref().to_string_lossy().into_owned())
-            .collect();
+        let args = strings(args);
         let joined = args.join(" ");
-        let out = self.run_local(dir, &args)?;
-        if !out.success() {
-            return Err(GoError::Failed {
-                args: joined,
-                status: out.status,
-                stderr: out.stderr.trim().to_owned(),
-            });
-        }
+        let out = self.run_local(dir, &args)?.checked(&joined)?;
         serde_json::from_str(&out.stdout).map_err(|source| GoError::Parse {
             args: joined,
             source,
         })
     }
 
-    /// Run `go <args>` and deserialize stdout as a stream of concatenated JSON
-    /// documents, which is how `go list -json` reports multiple items.
+    /// Stdout as concatenated JSON documents, the way `go list -json` prints them.
     pub fn run_json_stream<T, I, S>(&self, dir: &Path, args: I) -> Result<Vec<T>, GoError>
     where
         T: serde::de::DeserializeOwned,
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let args: Vec<String> = args
-            .into_iter()
-            .map(|a| a.as_ref().to_string_lossy().into_owned())
-            .collect();
-        let joined = args.join(" ");
+        let args = strings(args);
         let out = self.run_ok(dir, &args)?;
         serde_json::Deserializer::from_str(&out.stdout)
             .into_iter::<T>()
             .collect::<std::result::Result<Vec<T>, _>>()
             .map_err(|source| GoError::Parse {
-                args: joined,
+                args: args.join(" "),
                 source,
             })
     }
 
-    /// `go version`, parsed.
     pub fn version(&self) -> Result<GoVersion, GoError> {
-        let out = self.run_local(Path::new("."), ["version"])?;
-        if !out.success() {
-            return Err(GoError::Failed {
-                args: "version".to_owned(),
-                status: out.status,
-                stderr: out.stderr.trim().to_owned(),
-            });
-        }
+        let out = self
+            .run_local(Path::new("."), ["version"])?
+            .checked("version")?;
         GoVersion::parse_go_version_output(&out.stdout)
     }
 
-    /// `go env -json` evaluated in `dir`, so GOMOD and GOWORK reflect the project.
-    ///
-    /// Runs with `GOTOOLCHAIN=local` so a go.mod that asks for a newer Go does
-    /// not trigger a download; the reported `GOTOOLCHAIN` value is then
-    /// restored from [`Self::toolchain_mode`] so callers see the real setting.
+    /// `go env -json` in `dir` under `GOTOOLCHAIN=local` (no download), with the
+    /// real `GOTOOLCHAIN` restored from [`Self::toolchain_mode`].
     pub fn env(&self, dir: &Path) -> Result<BTreeMap<String, String>, GoError> {
         let mut env: BTreeMap<String, String> = self.run_json_local(dir, ["env", "-json"])?;
         if let Ok(mode) = self.toolchain_mode() {
@@ -245,12 +189,21 @@ impl Go {
         Ok(env)
     }
 
-    /// The effective `GOTOOLCHAIN` setting (`auto`, `local`, `go1.x`, ...),
-    /// read from a directory with no go.mod so it can never start a download.
+    /// Read from a directory without go.mod so it can never start a download.
     pub fn toolchain_mode(&self) -> Result<String, GoError> {
         let out = self.run_ok(&std::env::temp_dir(), ["env", "GOTOOLCHAIN"])?;
         Ok(out.stdout.trim().to_owned())
     }
+}
+
+fn strings<I, S>(args: I) -> Vec<String>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    args.into_iter()
+        .map(|a| a.as_ref().to_string_lossy().into_owned())
+        .collect()
 }
 
 fn exe(name: &str) -> String {

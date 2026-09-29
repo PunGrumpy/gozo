@@ -1,16 +1,13 @@
-//! `gozo build` — build every main package (or a selection) for one or more
-//! GOOS/GOARCH targets, with `main.version`, `main.commit` and `main.date`
-//! injected via `-ldflags -X`.
-
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use crate::style::{Mark, dim, mark};
 use anyhow::Context as _;
 use gozo_core::MainPackage;
 use serde::Serialize;
 
+use super::util::{display_rel, exit_for, plural};
 use crate::ctx::Ctx;
+use crate::style::{Mark, dim, mark};
 use crate::ui::Timer;
 
 #[derive(Debug, clap::Args)]
@@ -50,9 +47,9 @@ pub struct Args {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Target {
-    pub goos: String,
-    pub goarch: String,
+struct Target {
+    goos: String,
+    goarch: String,
 }
 
 impl std::fmt::Display for Target {
@@ -239,12 +236,12 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         let f = failures.len();
         ctx.ui.error(format!(
             "{f} build{} failed, {n} succeeded {}",
-            if f == 1 { "" } else { "s" },
+            plural(f),
             ctx.ui.dim(&total.elapsed())
         ));
     }
 
-    let failed = !failures.is_empty();
+    let ok = failures.is_empty();
     if ctx.json {
         ctx.out.json_value(&Doc {
             schema: "gozo.build/v1",
@@ -255,15 +252,10 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
             failures,
         })?;
     }
-    Ok(if failed {
-        ExitCode::from(1)
-    } else {
-        ExitCode::SUCCESS
-    })
+    Ok(exit_for(ok))
 }
 
-/// Pick the main packages matching `selectors` (name, `./cmd/x` path or import
-/// path). No selectors means every main package.
+/// Match by name, `./cmd/x` path or import path; no selectors means all.
 fn select_packages<'a>(
     all: &'a [MainPackage],
     selectors: &[String],
@@ -299,7 +291,7 @@ fn select_packages<'a>(
     Ok(out)
 }
 
-/// `GOOS/GOARCH` from flags, else gozo.toml `build.targets`, else the host.
+/// `--target`, else `--os`/`--arch` filled from the host, else `build.targets`, else the host.
 fn resolve_targets(
     flags: &[String],
     goos: Option<&str>,
@@ -338,7 +330,7 @@ fn resolve_targets(
     Ok(out)
 }
 
-pub fn parse_target(s: &str) -> anyhow::Result<Target> {
+fn parse_target(s: &str) -> anyhow::Result<Target> {
     let s = s.trim();
     let Some((goos, goarch)) = s.split_once('/') else {
         anyhow::bail!("invalid target `{s}`: expected GOOS/GOARCH, e.g. linux/amd64");
@@ -368,9 +360,9 @@ fn host_target(ctx: &Ctx, root: &Path) -> anyhow::Result<Target> {
     }
 }
 
-/// `api`, `api_linux_arm64`, `api_windows_amd64.exe`. The suffix appears when
-/// building for several targets or for something other than the host.
-pub fn binary_name(name: &str, target: &Target, host: &Target, multi: bool) -> String {
+/// `api`, or `api_linux_arm64` when building for several targets or a
+/// non-host one; `.exe` on windows.
+fn binary_name(name: &str, target: &Target, host: &Target, multi: bool) -> String {
     let mut out = name.to_owned();
     if multi || target != host {
         out.push_str(&format!("_{}_{}", target.goos, target.goarch));
@@ -381,7 +373,7 @@ pub fn binary_name(name: &str, target: &Target, host: &Target, multi: bool) -> S
     out
 }
 
-pub fn ldflags(version: &str, commit: &str, date: &str, user: Option<&str>) -> String {
+fn ldflags(version: &str, commit: &str, date: &str, user: Option<&str>) -> String {
     let mut s =
         format!("-s -w -X main.version={version} -X main.commit={commit} -X main.date={date}");
     if let Some(u) = user.map(str::trim).filter(|u| !u.is_empty()) {
@@ -391,7 +383,7 @@ pub fn ldflags(version: &str, commit: &str, date: &str, user: Option<&str>) -> S
     s
 }
 
-pub fn human_size(bytes: u64) -> String {
+fn human_size(bytes: u64) -> String {
     const UNITS: [&str; 5] = ["B", "kB", "MB", "GB", "TB"];
     let mut v = bytes as f64;
     let mut i = 0;
@@ -406,13 +398,7 @@ pub fn human_size(bytes: u64) -> String {
     }
 }
 
-fn display_rel(root: &Path, path: &Path) -> String {
-    let p = path.strip_prefix(root).unwrap_or(path);
-    let s = p.to_string_lossy().replace('\\', "/");
-    if s.is_empty() { ".".to_owned() } else { s }
-}
-
-/// Show a path relative to cwd when possible, else to the project root.
+/// Relative to cwd when possible, else to the project root, else absolute.
 fn display_path(cwd: &Path, root: &Path, path: &Path) -> String {
     if let Ok(p) = path.strip_prefix(cwd) {
         return p.to_string_lossy().replace('\\', "/");
@@ -451,7 +437,6 @@ mod tests {
     fn resolves_targets_in_precedence_order() {
         let host = t("linux", "amd64");
         let cfg = vec!["darwin/arm64".to_owned()];
-        // flags win
         let got = resolve_targets(
             &["windows/amd64".to_owned(), "windows/amd64".to_owned()],
             None,
@@ -461,13 +446,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(got, vec![t("windows", "amd64")]);
-        // --os/--arch fill from host
         let got = resolve_targets(&[], None, Some("arm64"), &cfg, &host).unwrap();
         assert_eq!(got, vec![t("linux", "arm64")]);
-        // config next
         let got = resolve_targets(&[], None, None, &cfg, &host).unwrap();
         assert_eq!(got, vec![t("darwin", "arm64")]);
-        // host last
         let got = resolve_targets(&[], None, None, &[], &host).unwrap();
         assert_eq!(got, vec![host.clone()]);
         assert!(resolve_targets(&[], None, None, &["bad".to_owned()], &host).is_err());

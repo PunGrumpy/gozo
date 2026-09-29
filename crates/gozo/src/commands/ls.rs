@@ -1,13 +1,12 @@
-//! `gozo ls`: list recorded deployments, newest first.
-
 use std::process::ExitCode;
 
 use chrono::{DateTime, Utc};
 use gozo_core::{Deployment, DeploymentHistory, Environment};
-use owo_colors::{OwoColorize, Stream::Stdout};
 use serde::Serialize;
 
+use super::util::plural;
 use crate::ctx::Ctx;
+use crate::style::{dim, green, red, yellow};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -64,7 +63,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         "{} of {} deployment{} for {}",
         rows.len(),
         all.len(),
-        if all.len() == 1 { "" } else { "s" },
+        plural(all.len()),
         ctx.ui.bold(&ctx.project_name())
     ));
     ctx.ui.blank();
@@ -81,12 +80,11 @@ fn prod_flag(e: Environment) -> &'static str {
     }
 }
 
-pub(crate) fn parse_environment(s: &str) -> Result<Environment, String> {
+fn parse_environment(s: &str) -> Result<Environment, String> {
     s.parse::<Environment>().map_err(|e| e.to_string())
 }
 
-/// `id  age  environment  status  image` with aligned columns; the first
-/// line is the (dimmed) header.
+/// Aligned rows; the first line is the dimmed header.
 fn render_table(rows: &[&Deployment], now: DateTime<Utc>) -> Vec<String> {
     let cells: Vec<[String; 5]> = rows
         .iter()
@@ -109,17 +107,13 @@ fn render_table(rows: &[&Deployment], now: DateTime<Utc>) -> Vec<String> {
     }
     let pad = |s: &str, w: usize| format!("{s:<w$}");
     let mut out = Vec::with_capacity(cells.len() + 1);
-    out.push(
-        header
-            .iter()
-            .zip(widths)
-            .map(|(h, w)| pad(h, w))
-            .collect::<Vec<_>>()
-            .join("  ")
-            .trim_end()
-            .if_supports_color(Stdout, |t| t.dimmed())
-            .to_string(),
-    );
+    out.push(dim(header
+        .iter()
+        .zip(widths)
+        .map(|(h, w)| pad(h, w))
+        .collect::<Vec<_>>()
+        .join("  ")
+        .trim_end()));
     for row in &cells {
         let mut line = Vec::with_capacity(5);
         for (i, (cell, w)) in row.iter().zip(widths).enumerate() {
@@ -137,9 +131,9 @@ fn render_table(rows: &[&Deployment], now: DateTime<Utc>) -> Vec<String> {
 
 fn color_status(status: &str, text: String) -> String {
     match status {
-        "ready" => text.if_supports_color(Stdout, |t| t.green()).to_string(),
-        "error" => text.if_supports_color(Stdout, |t| t.red()).to_string(),
-        "rolled-back" | "canceled" => text.if_supports_color(Stdout, |t| t.yellow()).to_string(),
+        "ready" => green(&text),
+        "error" => red(&text),
+        "rolled-back" | "canceled" => yellow(&text),
         _ => text,
     }
 }

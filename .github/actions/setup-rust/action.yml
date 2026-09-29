@@ -26,9 +26,7 @@ runs:
       uses: actions-rust-lang/setup-rust-toolchain@2b1f5e9b395427c92ee4e3331786ca3c37afe2d7 # v1
       with:
         target: ${{ inputs.targets }}
-        # needed to not make it override the defaults
         rustflags: ""
-        # we want more specific settings
         cache: false
 
     - name: "Setup Rust Cache"
@@ -37,5 +35,5 @@ runs:
       with:
         shared-key: ${{ inputs.shared-cache-key && format('{0}-{1}', github.head_ref || github.ref_name, inputs.shared-cache-key) || '' }}
         key: ${{ inputs.cache-key && format('{0}-{1}', github.head_ref || github.ref_name, inputs.cache-key) || (github.head_ref || github.ref_name) }}
-        # the cache is large and the free tier is 10gb, so only save on main
+        # The cache is large and the free tier is 10 GB.
         save-if: ${{ github.ref == 'refs/heads/main' && inputs.save-cache || 'false' }}

@@ -1,6 +1,3 @@
-//! `gozo dev`: build the main package, run it with env files loaded, and
-//! rebuild + restart when Go sources change.
-
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitCode, Stdio};
@@ -13,6 +10,7 @@ use gozo_core::{EnvStore, Environment, MainPackage, dotenv, link, packages};
 use notify::RecursiveMode;
 use notify_debouncer_mini::{DebounceEventResult, new_debouncer};
 
+use super::util::{exe_name, exit_code, which};
 use crate::ctx::Ctx;
 use crate::ui::Timer;
 
@@ -39,8 +37,8 @@ pub struct Args {
     pub args: Vec<String>,
 }
 
-/// SIGINT/SIGTERM set a flag that the run loops poll, so the child is always
-/// stopped through [`ChildGuard`] instead of being orphaned.
+/// SIGINT/SIGTERM only set a flag; the run loops poll it so the child is
+/// stopped through [`ChildGuard`] instead of orphaned.
 #[cfg(unix)]
 mod signals {
     use std::sync::atomic::{AtomicI32, Ordering};
@@ -56,14 +54,13 @@ mod signals {
     }
 
     pub fn install() {
-        // SAFETY: installing an async-signal-safe handler that only stores an int.
+        // SAFETY: the handler is async-signal-safe (a single atomic store).
         unsafe {
             signal(2, on_signal); // SIGINT
             signal(15, on_signal); // SIGTERM
         }
     }
 
-    /// The signal received so far, if any.
     pub fn received() -> Option<i32> {
         match RECEIVED.load(Ordering::SeqCst) {
             0 => None,
@@ -106,7 +103,6 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     let root = project.root.clone();
     ctx.ui.header();
 
-    // Which main package.
     let pkgs = packages::main_packages(&ctx.go, &project)?;
     if pkgs.is_empty() {
         anyhow::bail!(
@@ -122,7 +118,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
             list_pkgs(&pkgs, &root)
         ),
         None if ctx.ui.interactive && !ctx.ui.yes => {
-            let items: Vec<String> = pkgs.iter().map(|p| display_rel(p, &root)).collect();
+            let items: Vec<String> = pkgs.iter().map(|p| display_pkg(p, &root)).collect();
             let i = ctx
                 .ui
                 .select("Which main package do you want to run?", &items, 0)?;
@@ -134,9 +130,9 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         ),
     };
     ctx.ui
-        .step(format!("detected {}", display_rel(&pkg, &root)));
+        .step(format!("detected {}", display_pkg(&pkg, &root)));
 
-    // Environment: store (lowest) < env files in order < PORT.
+    // Precedence: `gozo env` store < env files in order < PORT.
     let store_vars = EnvStore::new(&root).list(Environment::Development)?;
     let file_names: Vec<String> = if !args.env_file.is_empty() {
         args.env_file
@@ -180,12 +176,10 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         ));
     }
 
-    // Services via docker compose.
     if let Some(compose) = compose_file(&root, ctx.config.dev.services.as_deref()) {
         start_services(ctx, &root, &compose);
     }
 
-    // Build output lives under .gozo/dev; keep it out of git.
     let bin_dir = root.join(gozo_core::STATE_DIR).join("dev");
     std::fs::create_dir_all(&bin_dir)?;
     let _ = link::ensure_gitignore(&root);
@@ -232,13 +226,12 @@ struct Runner<'a> {
     program_args: &'a [String],
     port: u16,
     child: Option<ChildGuard>,
-    /// When the last `go build` started; older mtimes are not real changes.
+    /// Files with an older mtime than this are not real changes.
     last_build: SystemTime,
 }
 
 impl Runner<'_> {
-    /// `go build` then (re)start. Returns whether a new process is running.
-    /// A failed build keeps the previous process alive.
+    /// Returns whether a new process is running; a failed build keeps the old one.
     fn build_and_start(&mut self) -> anyhow::Result<bool> {
         let timer = Timer::start();
         self.last_build = SystemTime::now();
@@ -287,8 +280,6 @@ impl Runner<'_> {
         Ok(true)
     }
 
-    /// `--no-watch`: block until the program exits (or we are told to stop)
-    /// and propagate its status.
     fn wait(&mut self) -> ExitCode {
         loop {
             if let Some(code) = self.interrupted() {
@@ -301,7 +292,7 @@ impl Runner<'_> {
             match status {
                 Ok(Some(status)) => {
                     self.child = None;
-                    return super::env::exit_code(status);
+                    return exit_code(status);
                 }
                 Ok(None) => std::thread::sleep(Duration::from_millis(100)),
                 Err(_) => return ExitCode::from(1),
@@ -309,7 +300,7 @@ impl Runner<'_> {
         }
     }
 
-    /// When a SIGINT/SIGTERM arrived: stop the child and pick the exit code.
+    /// After SIGINT/SIGTERM: stop the child and exit with 128 + signal.
     fn interrupted(&mut self) -> Option<ExitCode> {
         let sig = signals::received()?;
         if let Some(mut c) = self.child.take() {
@@ -319,7 +310,6 @@ impl Runner<'_> {
         Some(ExitCode::from((128 + sig).clamp(0, 255) as u8))
     }
 
-    /// Poll the child and report if it died on its own.
     fn poll_child(&mut self) {
         let exited = match self.child.as_mut().and_then(|g| g.0.as_mut()) {
             Some(c) => match c.try_wait() {
@@ -353,7 +343,6 @@ impl Runner<'_> {
         ignore_patterns.extend(self.ctx.config.dev.ignore.iter().cloned());
         let ignore_set = glob_set(&ignore_patterns)?;
 
-        // Watch the project root plus any module that lives outside it.
         let mut bases: Vec<PathBuf> = vec![self.root.to_path_buf()];
         for m in &project.modules {
             if !m.dir.starts_with(self.root) && !bases.contains(&m.dir) {
@@ -385,9 +374,8 @@ impl Runner<'_> {
                         let Some(rel) = relative_to(&bases, &ev.path) else {
                             continue;
                         };
-                        // notify also reports files that were merely opened
-                        // (go build reads go.mod, .git/HEAD, ...); only a
-                        // newer mtime, or a deletion, is a real change.
+                        // notify also reports files `go build` merely read;
+                        // only a newer mtime or a deletion is a real change.
                         if watch_set.is_match(&rel)
                             && !ignore_set.is_match(&rel)
                             && modified_since(&ev.path, self.last_build)
@@ -399,7 +387,6 @@ impl Runner<'_> {
                     if changed.is_empty() {
                         continue;
                     }
-                    // Drain anything that piled up during the debounce window.
                     while rx.try_recv().is_ok() {}
                     let more = changed.len().saturating_sub(1);
                     let first = changed.first().cloned().unwrap_or_default();
@@ -420,7 +407,7 @@ impl Runner<'_> {
     }
 }
 
-/// A child process that is killed when dropped, so it never outlives gozo.
+/// Kills the child on drop so it never outlives gozo.
 struct ChildGuard(Option<Child>);
 
 impl ChildGuard {
@@ -438,8 +425,8 @@ impl Drop for ChildGuard {
     }
 }
 
-/// Merge layers in order; later layers override earlier keys.
-pub fn layer_env(layers: Vec<Vec<(String, String)>>) -> BTreeMap<String, String> {
+/// Later layers override earlier keys.
+fn layer_env(layers: Vec<Vec<(String, String)>>) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
     for layer in layers {
         for (k, v) in layer {
@@ -449,8 +436,8 @@ pub fn layer_env(layers: Vec<Vec<(String, String)>>) -> BTreeMap<String, String>
     out
 }
 
-/// `--listen` beats `dev.port` beats a `PORT` from the env files beats 8080.
-pub fn resolve_port(
+/// `--listen`, else `dev.port`, else `PORT` from the env files, else 8080.
+fn resolve_port(
     listen: Option<u16>,
     configured: Option<u16>,
     env: &BTreeMap<String, String>,
@@ -469,8 +456,7 @@ fn glob_set(patterns: &[String]) -> anyhow::Result<GlobSet> {
     Ok(b.build()?)
 }
 
-/// Whether `path` was written after `since`. Missing files count as changed
-/// (a deleted source must trigger a rebuild); directories never do.
+/// Deleted files count as changed; directories never do.
 fn modified_since(path: &Path, since: SystemTime) -> bool {
     match std::fs::metadata(path) {
         Ok(m) if m.is_dir() => false,
@@ -479,7 +465,6 @@ fn modified_since(path: &Path, since: SystemTime) -> bool {
     }
 }
 
-/// Path relative to the first watched base that contains it, with `/` separators.
 fn relative_to(bases: &[PathBuf], path: &Path) -> Option<String> {
     bases
         .iter()
@@ -487,7 +472,8 @@ fn relative_to(bases: &[PathBuf], path: &Path) -> Option<String> {
         .map(|r| r.to_string_lossy().replace('\\', "/"))
 }
 
-fn display_rel(p: &MainPackage, root: &Path) -> String {
+/// `./cmd/api`, or `./svc/cmd/api` for a package in a nested module.
+fn display_pkg(p: &MainPackage, root: &Path) -> String {
     match p.module_dir.strip_prefix(root) {
         Ok(m) if !m.as_os_str().is_empty() => {
             format!(
@@ -502,7 +488,7 @@ fn display_rel(p: &MainPackage, root: &Path) -> String {
 
 fn list_pkgs(pkgs: &[MainPackage], root: &Path) -> String {
     pkgs.iter()
-        .map(|p| format!("  {}", display_rel(p, root)))
+        .map(|p| format!("  {}", display_pkg(p, root)))
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -517,12 +503,6 @@ fn compose_file(root: &Path, configured: Option<&str>) -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 
-fn docker_on_path() -> bool {
-    std::env::var_os("PATH")
-        .map(|p| std::env::split_paths(&p).any(|d| d.join(exe_name("docker")).is_file()))
-        .unwrap_or(false)
-}
-
 /// `docker compose up -d`; problems are warnings, never fatal.
 fn start_services(ctx: &mut Ctx, root: &Path, compose: &Path) {
     if !compose.is_file() {
@@ -530,7 +510,7 @@ fn start_services(ctx: &mut Ctx, root: &Path, compose: &Path) {
             .warn(format!("compose file {} not found", compose.display()));
         return;
     }
-    if !docker_on_path() {
+    if which("docker").is_none() {
         ctx.ui.warn(format!(
             "docker not found on PATH; not starting {}",
             compose.display()
@@ -578,7 +558,6 @@ fn start_services(ctx: &mut Ctx, root: &Path, compose: &Path) {
     }
 }
 
-/// Last non-empty line of a command's output, for one-line error summaries.
 fn last_line(bytes: &[u8]) -> Option<String> {
     String::from_utf8_lossy(bytes)
         .lines()
@@ -589,7 +568,7 @@ fn last_line(bytes: &[u8]) -> Option<String> {
 }
 
 /// `docker compose ps --format json` prints one object per line (newer
-/// versions) or a single array (older ones); accept both.
+/// versions) or a single array (older ones).
 fn compose_service_names(text: &str) -> Vec<String> {
     let mut names = Vec::new();
     let mut push = |v: &serde_json::Value| {
@@ -615,14 +594,6 @@ fn compose_service_names(text: &str) -> Vec<String> {
         }
     }
     names
-}
-
-fn exe_name(name: &str) -> String {
-    if cfg!(windows) {
-        format!("{name}.exe")
-    } else {
-        name.to_owned()
-    }
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-/// Schema identifier written into JSON output so agents can detect changes.
+/// Written into JSON output so agents can detect format changes.
 pub const SCHEMA: &str = "gozo.doctor/v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -19,12 +19,9 @@ pub struct Finding {
     /// Stable machine identifier, e.g. `go.toolchain`.
     pub id: &'static str,
     pub status: Status,
-    /// One line, human readable.
     pub title: String,
-    /// Extra lines shown under the title.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<String>,
-    /// A suggested command or action.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hint: Option<String>,
 }
@@ -40,8 +37,7 @@ impl Finding {
         }
     }
 
-    /// Add detail text. Multi-line input becomes one entry per line so
-    /// renderers can indent consistently.
+    /// Multi-line input becomes one entry per line so renderers can indent consistently.
     pub fn detail(mut self, line: impl Into<String>) -> Self {
         let text: String = line.into();
         self.details.extend(

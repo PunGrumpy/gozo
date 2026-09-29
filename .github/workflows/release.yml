@@ -1,12 +1,6 @@
-# Release pipeline, following https://changesets.dev/guide/automating
-# (changesets/action v2 sub-actions with npm trusted publishing).
-#
-#   select-mode ─┬─ version  (changesets pending)  → opens/updates "chore: Version packages" PR
-#                └─ build    (nothing pending, publishable version) → 5 platform binaries
-#                      └─ publish → platform npm packages, `changeset publish` (gozo + git tag
-#                                   + GitHub release), then tarballs attached to that release
-#
-# Permissions are reset at the workflow level and granted per job.
+# https://changesets.dev/guide/automating with changesets/action v2 sub-actions:
+# select-mode, then either the version PR, or build binaries and publish
+# (npm trusted publishing, `changeset publish`, tarballs on the GitHub release).
 
 name: Release
 
@@ -70,8 +64,6 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      # changeset:version runs scripts/sync-version.mjs, which patches Cargo.toml
-      # and Cargo.lock directly, so no Rust toolchain is needed here.
       - name: Create or update the version PR
         uses: changesets/action/version@v2
         with:
@@ -190,8 +182,6 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest && npm --version
 
-      # Publishes the generated gozo-<os>-<arch> packages, then `changeset publish`
-      # publishes `gozo`, pushes the `gozo@<version>` tag and creates the GitHub release.
       - name: Publish to npm
         id: changesets
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}

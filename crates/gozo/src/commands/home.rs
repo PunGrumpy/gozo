@@ -1,5 +1,4 @@
-//! Bare `gozo`: show what was detected and offer the common actions, like
-//! running `vercel` with no arguments.
+//! Bare `gozo`: detection summary plus a menu of common actions.
 
 use std::path::Path;
 use std::process::ExitCode;
@@ -38,7 +37,6 @@ struct LinkedDoc {
     project: String,
 }
 
-/// Menu entries, in display order.
 const ACTIONS: [(&str, &str); 7] = [
     ("Start development", "gozo dev"),
     ("Run tests", "gozo test"),

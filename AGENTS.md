@@ -1,6 +1,6 @@
 # Repository guide for coding agents
 
-gozo is a Rust CLI for Go projects, published as `gozo` on npm. Layout follows vercel/turborepo: `crates/` (Rust workspace), `packages/` (npm launcher), `scripts/` (release helpers), Turborepo for task orchestration, changesets for versioning, Bun as the package manager, Ultracite (oxlint + oxfmt) for JS.
+gozo is a Rust CLI for Go projects, published as `gozo` on npm. The layout follows vercel/turborepo: `crates/` holds the Rust workspace, `packages/` the npm launcher and `scripts/` the release helpers. Turborepo runs tasks, changesets drive versioning, Bun installs packages and Ultracite (oxlint and oxfmt) lints JavaScript.
 
 ## Commands you will need
 
@@ -13,8 +13,8 @@ gozo is a Rust CLI for Go projects, published as `gozo` on npm. Layout follows v
 ## Rules
 
 - PR titles: Conventional Commits, uppercase subject, no scope (`fix: Handle missing go.work`). Enforced by `.github/workflows/lint-pr-title.yml`.
-- User-facing change -> add a changeset with `bunx changeset` (package `gozo`).
-- New or changed command -> keep `--json` output stable or bump `gozo.<cmd>/v1`; document in README's command table.
+- A user-facing change needs a changeset: `bunx changeset`, package `gozo`.
+- A new or changed command keeps its `--json` output stable or bumps `gozo.<cmd>/v1`, and appears in the README command table.
 - Do not edit `Cargo.toml`'s workspace version by hand; it is derived from `packages/gozo/package.json`.
 - Do not add crate dependencies without saying why in the PR.
 

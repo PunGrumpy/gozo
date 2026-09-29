@@ -1,5 +1,3 @@
-// Launcher test: with GOZO_BINARY_PATH set to any executable, the launcher must
-// exec it and propagate the exit code. Run with `node --test bin/gozo.test.mjs`.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";

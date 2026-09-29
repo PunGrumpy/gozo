@@ -21,7 +21,7 @@ runs:
       with:
         bun-version-file: "package.json"
 
-    # Node is still needed: turbo, changesets and npm publish run on it.
+    # turbo, changesets and npm publish run on Node.
     - name: Setup Node.js
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:

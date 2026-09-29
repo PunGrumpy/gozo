@@ -1,16 +1,12 @@
-//! `gozo check` — `go vet`, gofmt and golangci-lint across every module.
-//!
-//! Each check produces one line in the style of `gozo doctor`, followed by
-//! `file:line:col: message` details. Exit 1 when any check fails.
-
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
-use crate::style::{Mark, dim, green, mark, red};
 use serde::Serialize;
 
+use super::util::{display_rel, exit_for, plural, which};
 use crate::ctx::Ctx;
+use crate::style::{Mark, dim, green, mark, red};
 
 const MAX_ISSUE_LINES: usize = 20;
 
@@ -53,7 +49,6 @@ enum Status {
 struct Check {
     id: &'static str,
     status: Status,
-    /// Number of issues.
     count: usize,
     #[serde(skip)]
     title: String,
@@ -129,15 +124,8 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     } else {
         print_human(&checks, &summary, ctx.ui.color);
     }
-    Ok(if failed {
-        ExitCode::from(1)
-    } else {
-        ExitCode::SUCCESS
-    })
+    Ok(exit_for(!failed))
 }
-
-// ---------------------------------------------------------------------------
-// vet
 
 fn run_vet(ctx: &Ctx, root: &Path, modules: &[PathBuf]) -> Check {
     let mut issues = Vec::new();
@@ -167,7 +155,7 @@ fn run_vet(ctx: &Ctx, root: &Path, modules: &[PathBuf]) -> Check {
             });
         }
         if !out.success() && report.issues.is_empty() {
-            // Build errors: vet prints them as plain text on stderr.
+            // Build errors are not in the JSON report; vet prints them on stderr.
             for line in out.stderr.lines() {
                 if let Some(issue) = parse_diagnostic(line, dir, root, "vet") {
                     issues.push(issue);
@@ -209,9 +197,6 @@ fn run_vet(ctx: &Ctx, root: &Path, modules: &[PathBuf]) -> Check {
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// gofmt
 
 fn run_fmt(ctx: &Ctx, root: &Path, modules: &[PathBuf], fix: bool) -> Check {
     let gofmt = gofmt_bin(&ctx.go.bin);
@@ -312,16 +297,13 @@ fn run_fmt(ctx: &Ctx, root: &Path, modules: &[PathBuf], fix: bool) -> Check {
 
 /// gofmt lives next to `go` in GOROOT/bin; fall back to PATH.
 fn gofmt_bin(go_bin: &Path) -> PathBuf {
-    let name = if cfg!(windows) { "gofmt.exe" } else { "gofmt" };
+    let name = super::util::exe_name("gofmt");
     go_bin
         .parent()
-        .map(|d| d.join(name))
+        .map(|d| d.join(&name))
         .filter(|p| p.is_file())
         .unwrap_or_else(|| PathBuf::from(name))
 }
-
-// ---------------------------------------------------------------------------
-// golangci-lint
 
 fn run_lint(ctx: &Ctx, root: &Path, modules: &[PathBuf], fix: bool) -> Check {
     let Some(bin) = which("golangci-lint") else {
@@ -442,7 +424,7 @@ fn golangci_is_v2(bin: &Path) -> bool {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
-    // "golangci-lint has version 1.64.8 built ..." / "... version v2.1.6 ..."
+    // "golangci-lint has version 1.64.8 built ..." or "... version v2.1.6 ..."
     match text.split("version ").nth(1) {
         Some(rest) => !rest.trim_start_matches('v').starts_with("1."),
         None => true,
@@ -482,9 +464,6 @@ fn parse_golangci(stdout: &str) -> Option<Vec<LintIssue>> {
     Some(out)
 }
 
-// ---------------------------------------------------------------------------
-// shared helpers
-
 /// Parse a Go-style `file:line:col: message` (or `file:line: message`) line.
 fn parse_diagnostic(
     line: &str,
@@ -496,7 +475,7 @@ fn parse_diagnostic(
     if line.is_empty() || line.starts_with('#') || line.starts_with("vet:") {
         return None;
     }
-    // Locate ": " after the position; the position itself may contain ':' (drive letters).
+    // Split on ": " rather than ':' because the position may hold a drive letter.
     let (posn, message) = line.split_once(": ")?;
     let (file, l, c) = gozo_go::split_posn(posn);
     if l == 0 || file.is_empty() {
@@ -511,25 +490,6 @@ fn parse_diagnostic(
     })
 }
 
-fn display_rel(root: &Path, path: &Path) -> String {
-    let p = path.strip_prefix(root).unwrap_or(path);
-    let s = p.to_string_lossy().replace('\\', "/");
-    if s.is_empty() { ".".to_owned() } else { s }
-}
-
-fn which(name: &str) -> Option<PathBuf> {
-    let exe = if cfg!(windows) {
-        format!("{name}.exe")
-    } else {
-        name.to_owned()
-    };
-    std::env::var_os("PATH").and_then(|p| {
-        std::env::split_paths(&p)
-            .map(|d| d.join(&exe))
-            .find(|c| c.is_file())
-    })
-}
-
 fn first_lines(s: &str, n: usize) -> String {
     s.lines()
         .filter(|l| !l.trim().is_empty())
@@ -537,13 +497,6 @@ fn first_lines(s: &str, n: usize) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
-
-fn plural(n: usize) -> &'static str {
-    if n == 1 { "" } else { "s" }
-}
-
-// ---------------------------------------------------------------------------
-// human output
 
 fn print_human(checks: &[Check], s: &Summary, color: bool) {
     println!();

@@ -1,5 +1,4 @@
-//! Read-only git facts, via the `git` binary. Every function returns `None`
-//! when git is missing or the directory is not a repository.
+//! Read-only facts from the `git` binary; `None`/empty when git is missing or this is not a repo.
 
 use std::path::Path;
 use std::process::Command;
@@ -33,12 +32,10 @@ pub fn branch(root: &Path) -> Option<String> {
     git(root, &["rev-parse", "--abbrev-ref", "HEAD"]).filter(|b| b != "HEAD")
 }
 
-/// URL of the `origin` remote, when there is one.
 pub fn remote_url(root: &Path) -> Option<String> {
     git(root, &["remote", "get-url", "origin"])
 }
 
-/// `git describe --tags --always --dirty`, a good default version string.
 pub fn describe(root: &Path) -> Option<String> {
     git(root, &["describe", "--tags", "--always", "--dirty"])
 }
@@ -52,10 +49,8 @@ pub fn is_dirty(root: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Paths (relative to root) that `git status --porcelain` reports as changed.
 pub fn changed_paths(root: &Path) -> Vec<String> {
-    // Not via `git()`: that trims the output, which would eat the leading
-    // status space of the first line and shift its path by one character.
+    // Not via `git()`: trimming would eat the first line's leading status column.
     let Ok(out) = Command::new("git")
         .args(["status", "--porcelain"])
         .current_dir(root)

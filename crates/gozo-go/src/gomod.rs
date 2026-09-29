@@ -11,10 +11,8 @@ use crate::command::{Go, GoError};
 pub struct GoMod {
     #[serde(default)]
     pub module: Option<ModuleRef>,
-    /// The `go` directive, e.g. `1.27.1`. Absent in very old go.mod files.
     #[serde(default)]
     pub go: Option<String>,
-    /// The `toolchain` directive, e.g. `go1.27.1`.
     #[serde(default)]
     pub toolchain: Option<String>,
     #[serde(default, deserialize_with = "crate::null_default")]
@@ -54,7 +52,7 @@ pub struct Replace {
 }
 
 impl Replace {
-    /// A replace whose target is a filesystem path rather than a module version.
+    /// The target is a filesystem path rather than a module version.
     pub fn is_local(&self) -> bool {
         self.new.version.is_none()
             && (self.new.path.starts_with("./")
@@ -93,12 +91,10 @@ pub struct Use {
 }
 
 impl Go {
-    /// `go mod edit -json` for the module rooted at `dir`.
     pub fn mod_edit(&self, dir: &Path) -> Result<GoMod, GoError> {
         self.run_json_local(dir, ["mod", "edit", "-json"])
     }
 
-    /// `go work edit -json` for the workspace whose go.work lives in `dir`.
     pub fn work_edit(&self, dir: &Path) -> Result<GoWork, GoError> {
         self.run_json_local(dir, ["work", "edit", "-json"])
     }

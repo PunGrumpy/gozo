@@ -1,14 +1,12 @@
-//! `gozo generate` — `go generate` in every module, optionally verifying
-//! (via git) that the committed generated code is current.
-
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use crate::style::{Mark, dim, mark};
 use serde::Serialize;
 
+use super::util::{exit_for, plural};
 use crate::ctx::Ctx;
+use crate::style::{Mark, dim, mark};
 use crate::ui::Timer;
 
 #[derive(Debug, clap::Args)]
@@ -34,7 +32,7 @@ struct Doc {
 
 #[derive(Debug, Serialize)]
 struct ModuleResult {
-    /// Module directory relative to the project root.
+    /// Relative to the project root.
     path: String,
     ok: bool,
     error: Option<String>,
@@ -69,7 +67,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     ctx.ui.step(format!(
         "Generating ({} module{})",
         modules.len(),
-        if modules.len() == 1 { "" } else { "s" }
+        plural(modules.len())
     ));
     let timer = Timer::start();
     let before: BTreeSet<String> = if args.check {
@@ -139,11 +137,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     } else {
         print_human(&results, &stale, args.check, &timer.elapsed(), ctx.ui.color);
     }
-    Ok(if ok {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    })
+    Ok(exit_for(ok))
 }
 
 fn print_human(
@@ -178,7 +172,7 @@ fn print_human(
             println!(
                 "  {} {n} generated file{} {} stale  {}",
                 mark(color, Mark::Fail),
-                if n == 1 { "" } else { "s" },
+                plural(n),
                 if n == 1 { "is" } else { "are" },
                 dim(elapsed)
             );
@@ -194,7 +188,7 @@ fn print_human(
         println!(
             "  {} go generate ran in {n_ok} module{}  {}",
             mark(color, Mark::Ok),
-            if n_ok == 1 { "" } else { "s" },
+            plural(n_ok),
             dim(elapsed)
         );
     }

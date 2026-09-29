@@ -1,5 +1,4 @@
-//! Local deployment history in `.gozo/deployments.json`, used by `gozo ls`,
-//! `gozo status` and `gozo rollback`.
+//! Local deployment history in `.gozo/deployments.json`.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -21,7 +20,6 @@ pub struct Deployment {
     pub target: Target,
     pub environment: Environment,
     pub created_at: DateTime<Utc>,
-    /// Full image reference that was deployed, e.g. `ghcr.io/acme/api:abc123`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -30,10 +28,8 @@ pub struct Deployment {
     pub git_branch: Option<String>,
     /// `ready`, `error`, `rolled-back`, `canceled`.
     pub status: String,
-    /// Where the running service can be reached, when known.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    /// Free-form metadata (`--meta key=value`).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub meta: BTreeMap<String, String>,
 }
@@ -43,7 +39,6 @@ impl Deployment {
         let nanos = Utc::now().timestamp_nanos_opt().unwrap_or(0) as u64;
         let pid = std::process::id() as u64;
         let mut x = nanos ^ (pid << 32) ^ 0x9e37_79b9_7f4a_7c15;
-        // xorshift for a little spread
         x ^= x << 13;
         x ^= x >> 7;
         x ^= x << 17;
@@ -122,14 +117,6 @@ impl DeploymentHistory {
         self.deployments.iter_mut().find(|d| d.id == id)
     }
 
-    /// Most recent ready deployment for an environment.
-    pub fn current(&self, env: Environment) -> Option<&Deployment> {
-        self.list()
-            .into_iter()
-            .find(|d| d.environment == env && d.status == "ready")
-    }
-
-    /// The ready deployment before `current` for an environment.
     pub fn previous(&self, env: Environment) -> Option<&Deployment> {
         self.list()
             .into_iter()

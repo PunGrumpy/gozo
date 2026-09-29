@@ -1,7 +1,4 @@
-//! `gozo deploy`: build the project and deploy it to the linked target.
-//!
-//! Mirrors `vercel deploy`: progress goes to stderr, stdout carries only the
-//! deployment URL (or the image reference when the target has no URL).
+//! stdout carries only the deployment URL (or the image when there is none).
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -15,6 +12,7 @@ use gozo_deploy::DeployRequest;
 use owo_colors::{OwoColorize, Stream::Stderr};
 use serde::Serialize;
 
+use super::util::{exit_for, plural};
 use crate::ctx::Ctx;
 use crate::ui::{Timer, UiReporter};
 
@@ -78,11 +76,14 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         .into_iter()
         .collect();
     let stored = runtime_env.len();
-    runtime_env.extend(parse_env_list(&args.env, "--env")?);
-    let build_env: BTreeMap<String, String> = parse_env_list(&args.build_env, "--build-env")?
+    runtime_env.extend(parse_list(&args.env, "--env", parse_env_kv)?);
+    let build_env: BTreeMap<String, String> =
+        parse_list(&args.build_env, "--build-env", parse_env_kv)?
+            .into_iter()
+            .collect();
+    let meta: BTreeMap<String, String> = parse_list(&args.meta, "--meta", parse_kv)?
         .into_iter()
         .collect();
-    let meta: BTreeMap<String, String> = parse_kv_list(&args.meta, "--meta")?.into_iter().collect();
 
     let git_sha = git::sha(&root);
     let git_branch = git::branch(&root);
@@ -99,7 +100,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     if stored > 0 {
         ctx.ui.detail(format!(
             "{stored} variable{} from `gozo env` ({environment})",
-            if stored == 1 { "" } else { "s" }
+            plural(stored)
         ));
     }
 
@@ -195,11 +196,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
             dry_run: args.dry_run,
             error: error.as_deref(),
         })?;
-        return Ok(if error.is_some() {
-            ExitCode::from(1)
-        } else {
-            ExitCode::SUCCESS
-        });
+        return Ok(exit_for(error.is_none()));
     }
 
     if let Some(err) = error {
@@ -225,9 +222,8 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-/// The link to deploy with. `--target` overrides the linked target; when the
-/// directory is not linked, `--target` or `deploy.target` in gozo.toml is
-/// enough to deploy without a link.
+/// `--target` overrides the linked target; unlinked directories can still
+/// deploy with `--target` or `deploy.target` in gozo.toml.
 fn resolve_link(ctx: &Ctx, target: Option<Target>) -> anyhow::Result<Link> {
     if let Some(linked) = &ctx.link {
         let mut link = linked.clone();
@@ -268,7 +264,6 @@ fn resolve_link(ctx: &Ctx, target: Option<Target>) -> anyhow::Result<Link> {
     }
 }
 
-/// Short git SHA (with `-dirty` when the tree has changes), else a timestamp.
 fn default_tag(root: &Path, now: DateTime<Utc>) -> String {
     match git::short_sha(root) {
         Some(sha) if git::is_dirty(root) => format!("{sha}-dirty"),
@@ -289,12 +284,12 @@ fn fail_mark(color: bool) -> String {
     }
 }
 
-pub(crate) fn parse_target(s: &str) -> Result<Target, String> {
+fn parse_target(s: &str) -> Result<Target, String> {
     s.parse::<Target>().map_err(|e| e.to_string())
 }
 
-/// `KEY=VALUE` with a non-empty key. The value may contain `=`.
-pub(crate) fn parse_kv(s: &str) -> Result<(String, String), String> {
+/// `KEY=VALUE`; the value may contain `=`.
+fn parse_kv(s: &str) -> Result<(String, String), String> {
     let (k, v) = s
         .split_once('=')
         .ok_or_else(|| format!("expected KEY=VALUE, got {s:?}"))?;
@@ -305,8 +300,7 @@ pub(crate) fn parse_kv(s: &str) -> Result<(String, String), String> {
     Ok((k.to_owned(), v.to_owned()))
 }
 
-/// `KEY=VALUE` where KEY is a valid environment variable name.
-pub(crate) fn parse_env_kv(s: &str) -> Result<(String, String), String> {
+fn parse_env_kv(s: &str) -> Result<(String, String), String> {
     let (k, v) = parse_kv(s)?;
     if !gozo_core::envstore::valid_key(&k) {
         return Err(format!(
@@ -316,17 +310,14 @@ pub(crate) fn parse_env_kv(s: &str) -> Result<(String, String), String> {
     Ok((k, v))
 }
 
-fn parse_kv_list(items: &[String], flag: &str) -> anyhow::Result<Vec<(String, String)>> {
+fn parse_list(
+    items: &[String],
+    flag: &str,
+    parse: fn(&str) -> Result<(String, String), String>,
+) -> anyhow::Result<Vec<(String, String)>> {
     items
         .iter()
-        .map(|s| parse_kv(s).map_err(|e| anyhow!("{flag}: {e}")))
-        .collect()
-}
-
-fn parse_env_list(items: &[String], flag: &str) -> anyhow::Result<Vec<(String, String)>> {
-    items
-        .iter()
-        .map(|s| parse_env_kv(s).map_err(|e| anyhow!("{flag}: {e}")))
+        .map(|s| parse(s).map_err(|e| anyhow!("{flag}: {e}")))
         .collect()
 }
 
@@ -384,8 +375,8 @@ mod tests {
         );
         assert!(parse_env_kv("build-id=7").is_err());
         assert!(parse_env_kv("1ABC=x").is_err());
-        assert!(parse_env_list(&["A=1".into(), "B".into()], "--env").is_err());
-        let ok = parse_env_list(&["A=1".into(), "B=2".into()], "--env").unwrap();
+        assert!(parse_list(&["A=1".into(), "B".into()], "--env", parse_env_kv).is_err());
+        let ok = parse_list(&["A=1".into(), "B=2".into()], "--env", parse_env_kv).unwrap();
         assert_eq!(ok.len(), 2);
     }
 
@@ -405,7 +396,6 @@ mod tests {
     #[test]
     fn default_tag_outside_git_is_timestamp() {
         let t = Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap();
-        // The temp dir is not a git repository, so the timestamp wins.
         let dir = std::env::temp_dir();
         let tag = default_tag(&dir, t);
         assert!(tag == "20260102030405" || tag.chars().all(|c| c.is_ascii_hexdigit() || c == '-'));

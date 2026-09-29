@@ -1,8 +1,3 @@
-//! `gozo logs`: show or stream logs from the linked target.
-//!
-//! The adapter builds the `docker logs` / `kubectl logs` command; this module
-//! only spawns it. With `--json` every line is re-emitted as JSON Lines.
-
 use std::io::{BufRead, BufReader};
 use std::process::{Command, ExitCode, ExitStatus, Stdio};
 
@@ -11,6 +6,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use gozo_deploy::LogOptions;
 use serde::Serialize;
 
+use super::util::exit_code;
 use crate::ctx::Ctx;
 
 #[derive(Debug, clap::Args)]
@@ -69,14 +65,14 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     };
 
     Ok(match status {
-        // Output was closed early (`| head`): the reader got what it wanted.
+        // stdout closed early (`| head`): the reader got what it wanted.
         None => ExitCode::SUCCESS,
         Some(s) => exit_code(s),
     })
 }
 
-/// Pipe the tool's stdout and re-emit each line as `gozo.log/v1` JSON Lines.
-/// Returns `None` when stdout closed before the tool finished.
+/// Re-emit each line as `gozo.log/v1` JSON Lines; `None` when stdout closed
+/// before the tool finished.
 fn stream_json(
     ctx: &Ctx,
     mut cmd: Command,
@@ -112,8 +108,8 @@ fn stream_json(
     Ok(Some(child.wait()?))
 }
 
-/// With `--timestamps` the tools prefix `RFC3339 <space> line`; peel that
-/// off when it parses, otherwise stamp the line with `now`.
+/// With `--timestamps` the tools prefix `RFC3339 <space> line`; otherwise
+/// (or when it does not parse) the line is stamped with `now`.
 fn split_timestamp(line: &str, timestamps: bool, now: DateTime<Utc>) -> (String, String) {
     if timestamps {
         if let Some((ts, rest)) = line.split_once(' ') {
@@ -127,13 +123,6 @@ fn split_timestamp(line: &str, timestamps: bool, now: DateTime<Utc>) -> (String,
 
 fn rfc3339(t: DateTime<Utc>) -> String {
     t.to_rfc3339_opts(SecondsFormat::Millis, true)
-}
-
-fn exit_code(status: ExitStatus) -> ExitCode {
-    match status.code() {
-        Some(c) => ExitCode::from(c.clamp(0, 255) as u8),
-        None => ExitCode::from(1),
-    }
 }
 
 fn display_command(cmd: &Command) -> String {
@@ -161,16 +150,13 @@ mod tests {
         assert_eq!(ts, "2026-09-29T10:00:00.123Z");
         assert_eq!(line, "hello world");
 
-        // offset timestamps are normalised to UTC
         let (ts, _) = split_timestamp("2026-09-29T12:00:00+02:00 x", true, now);
         assert_eq!(ts, "2026-09-29T10:00:00.000Z");
 
-        // not a timestamp: keep the whole line and use now
         let (ts, line) = split_timestamp("plain line", true, now);
         assert_eq!(ts, "2026-09-29T12:00:00.000Z");
         assert_eq!(line, "plain line");
 
-        // without --timestamps the prefix is left alone
         let (ts, line) = split_timestamp("2026-09-29T10:00:00Z x", false, now);
         assert_eq!(ts, "2026-09-29T12:00:00.000Z");
         assert_eq!(line, "2026-09-29T10:00:00Z x");

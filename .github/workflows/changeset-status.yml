@@ -1,4 +1,3 @@
-# Non-blocking changeset reminder on every PR, per
 # https://changesets.dev/guide/automating#non-blocking
 
 name: Changeset status

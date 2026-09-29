@@ -1,6 +1,5 @@
-//! Per-environment variables stored under `.gozo/env/<environment>.env`.
-//!
-//! Environments follow Vercel's naming: `development`, `preview`, `production`.
+//! Per-environment variables in `.gozo/env/<environment>.env`. Environment
+//! names follow Vercel: `development`, `preview`, `production`.
 
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -86,7 +85,7 @@ impl EnvStore {
             .map(|(_, v)| v))
     }
 
-    /// Set a key, returning whether it already existed.
+    /// Returns whether the key already existed.
     pub fn set(&self, env: Environment, key: &str, value: &str) -> Result<bool> {
         let mut vars = self.list(env)?;
         let existed = if let Some(slot) = vars.iter_mut().find(|(k, _)| k == key) {
@@ -100,7 +99,7 @@ impl EnvStore {
         Ok(existed)
     }
 
-    /// Remove a key, returning whether it existed.
+    /// Returns whether the key existed.
     pub fn remove(&self, env: Environment, key: &str) -> Result<bool> {
         let mut vars = self.list(env)?;
         let before = vars.len();
@@ -120,7 +119,6 @@ impl EnvStore {
     }
 }
 
-/// Validate an environment variable name.
 pub fn valid_key(key: &str) -> bool {
     !key.is_empty()
         && !key.starts_with(|c: char| c.is_ascii_digit())

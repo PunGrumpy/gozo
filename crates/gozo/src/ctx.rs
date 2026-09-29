@@ -1,6 +1,3 @@
-//! Everything a command needs: the located `go`, the project, config, link,
-//! and the UI/output sinks. Built once in `main`.
-
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, anyhow};
@@ -14,9 +11,8 @@ use crate::ui::Ui;
 pub struct Ctx {
     pub cwd: PathBuf,
     pub go: Go,
-    /// `None` when the directory is not inside a Go project.
+    /// `None` outside a Go project; `config` is then the defaults.
     pub project: Option<Project>,
-    /// Parsed `gozo.toml`, or defaults when absent.
     pub config: Config,
     pub link: Option<Link>,
     pub ui: Ui,
@@ -76,7 +72,6 @@ impl Ctx {
         })
     }
 
-    /// The Go project, or a friendly error.
     pub fn project(&self) -> anyhow::Result<&Project> {
         self.project.as_ref().ok_or_else(|| {
             anyhow!(
@@ -90,7 +85,7 @@ impl Ctx {
         Ok(&self.project()?.root)
     }
 
-    /// Project name precedence: --project, link, gozo.toml, root module name.
+    /// Precedence: `--project`, link, gozo.toml, module name, directory name.
     pub fn project_name(&self) -> String {
         if let Some(p) = &self.project_override {
             return p.clone();
@@ -109,14 +104,12 @@ impl Ctx {
         })
     }
 
-    /// The link, or a friendly error telling the user to run `gozo link`.
     pub fn link_required(&self) -> anyhow::Result<&Link> {
         self.link.as_ref().ok_or_else(|| {
             anyhow!("this directory is not linked to a deployment target\n  run `gozo link` first")
         })
     }
 
-    /// Re-read `.gozo/project.json` after `gozo link` writes it.
     pub fn reload_link(&mut self) -> anyhow::Result<()> {
         if let Some(root) = self.project.as_ref().map(|p| p.root.clone()) {
             self.link = Link::load(&root)?;
@@ -124,7 +117,6 @@ impl Ctx {
         Ok(())
     }
 
-    /// Re-read `gozo.toml` after `gozo init` writes it.
     pub fn reload_config(&mut self) -> anyhow::Result<()> {
         if let Some(root) = self.project.as_ref().map(|p| p.root.clone()) {
             self.config = Config::load(&root)?.unwrap_or_default();
@@ -132,7 +124,6 @@ impl Ctx {
         Ok(())
     }
 
-    /// Re-discover the project (after `gozo init` creates go.mod).
     pub fn reload_project(&mut self) -> anyhow::Result<()> {
         self.project = match Project::discover(&self.go, &self.cwd) {
             Ok(p) => Some(p),

@@ -16,8 +16,8 @@ use crate::{
 const LABEL_PROJECT: &str = "gozo.project";
 const LABEL_TAG: &str = "gozo.tag";
 const LABEL_ENV: &str = "gozo.environment";
-/// Comma-separated runtime env keys gozo passed with `-e`, so a rollback can
-/// carry them over without re-passing variables baked into the image.
+/// Comma-separated keys gozo passed with `-e`, so a rollback carries over only
+/// those and not variables baked into the image.
 const LABEL_ENV_KEYS: &str = "gozo.env";
 
 pub struct DockerAdapter {
@@ -47,7 +47,6 @@ impl DockerAdapter {
         image::repository(self.cfg.image.as_deref(), &self.project)
     }
 
-    /// `docker inspect NAME`, or `None` when there is no such container.
     fn inspect(&self, r: &mut dyn Reporter) -> Result<Option<ContainerInfo>> {
         let mut cmd = Command::new("docker");
         cmd.args(["inspect", "--type", "container", &self.container_name()]);
@@ -58,7 +57,7 @@ impl DockerAdapter {
         }
     }
 
-    /// Stop and remove the container if it exists.
+    /// Returns whether a container existed.
     fn remove_container(&self, r: &mut dyn Reporter) -> Result<bool> {
         let name = self.container_name();
         let mut stop = Command::new("docker");
@@ -137,13 +136,16 @@ impl Adapter for DockerAdapter {
 
     fn preflight(&self, r: &mut dyn Reporter) -> Result<Vec<(String, bool, String)>> {
         let mut checks = image::docker_checks(r);
-        let (ok, detail) = image::dockerfile_summary(&self.root, &self.cfg);
-        checks.push(("Dockerfile".to_owned(), ok, detail));
+        checks.push((
+            "Dockerfile".to_owned(),
+            true,
+            image::dockerfile_summary(&self.root, &self.cfg),
+        ));
         Ok(checks)
     }
 
     fn deploy(&self, req: &DeployRequest, r: &mut dyn Reporter) -> Result<DeployOutcome> {
-        let image_ref = image::image_ref(&self.repository(), &req.tag);
+        let image_ref = format!("{}:{}", self.repository(), req.tag);
         image::build(
             &self.root,
             &self.project,
@@ -211,7 +213,7 @@ impl Adapter for DockerAdapter {
                         .started_at
                         .as_deref()
                         .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|t| crate::age_now(t.with_timezone(&Utc)))
+                        .map(|t| crate::age(t.with_timezone(&Utc), Utc::now()))
                         .unwrap_or_else(|| "?".to_owned());
                     let restarts = if info.restart_count > 0 {
                         format!(", {} restarts", info.restart_count)
@@ -268,7 +270,6 @@ impl Adapter for DockerAdapter {
             DeployError::Config(format!("deployment {} has no image recorded", d.id))
         })?;
 
-        // Carry over the runtime variables gozo passed to the current container.
         let current = self.inspect(r)?;
         let (env, environment) = match &current {
             Some(c) => {
@@ -319,8 +320,7 @@ fn is_not_found(stderr: &str) -> bool {
     s.contains("no such container") || s.contains("no such object")
 }
 
-/// Host port of a `docker run -p` mapping: `8080:80` -> 8080,
-/// `127.0.0.1:8080:80` -> 8080, `80` (random host port) -> None.
+/// `8080:80` and `127.0.0.1:8080:80` -> 8080; a bare `80` (random host port) -> None.
 pub(crate) fn host_port(spec: &str) -> Option<u16> {
     let spec = spec.split('/').next().unwrap_or(spec);
     let parts: Vec<&str> = spec.split(':').collect();
@@ -332,7 +332,6 @@ pub(crate) fn host_port(spec: &str) -> Option<u16> {
     host.parse().ok()
 }
 
-/// What `gozo status` needs from `docker inspect`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ContainerInfo {
     pub status: String,
@@ -345,7 +344,6 @@ pub(crate) struct ContainerInfo {
     pub raw: serde_json::Value,
 }
 
-/// Parse `docker inspect` output (a JSON array). `None` when it is empty.
 pub(crate) fn parse_inspect(json: &str) -> Result<Option<ContainerInfo>> {
     let value: serde_json::Value = serde_json::from_str(json)
         .map_err(|e| DeployError::Other(format!("could not parse docker inspect output: {e}")))?;

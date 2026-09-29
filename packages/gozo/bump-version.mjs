@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// Pins optionalDependencies on the platform packages to this package's version.
-// Run at publish time (the committed package.json intentionally has none so
-// the workspace installs before any platform package exists on npm).
+// Run at publish time. The committed package.json has no optionalDependencies
+// so the workspace installs before any platform package exists on npm.
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 

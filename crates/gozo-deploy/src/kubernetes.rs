@@ -59,7 +59,6 @@ impl KubernetesAdapter {
         )
     }
 
-    /// `kubectl` with `--context` and `-n` applied.
     fn kubectl(&self) -> Command {
         let mut cmd = Command::new("kubectl");
         cmd.args(self.scope_args());
@@ -107,7 +106,6 @@ impl KubernetesAdapter {
         parts.join(" ")
     }
 
-    /// `kubectl get deployment NAME -o json`, or `None` when it does not exist.
     fn get_deployment(&self, r: &mut dyn Reporter) -> Result<Option<String>> {
         let mut cmd = self.kubectl();
         cmd.args(["get", &self.deployment_ref(), "-o", "json"]);
@@ -184,8 +182,11 @@ impl Adapter for KubernetesAdapter {
             }
         }
         checks.extend(image::docker_checks(r));
-        let (ok, detail) = image::dockerfile_summary(&self.root, &self.docker);
-        checks.push(("Dockerfile".to_owned(), ok, detail));
+        checks.push((
+            "Dockerfile".to_owned(),
+            true,
+            image::dockerfile_summary(&self.root, &self.docker),
+        ));
 
         let kubectl_ok = checks.iter().any(|(what, ok, _)| what == "kubectl" && *ok);
         let what = format!("deployment {}", self.deployment_name());
@@ -213,7 +214,7 @@ impl Adapter for KubernetesAdapter {
                  (set deploy.kubernetes.image, e.g. ghcr.io/you/{repo})"
             ));
         }
-        let image_ref = image::image_ref(&repo, &req.tag);
+        let image_ref = format!("{repo}:{}", req.tag);
         image::build(
             &self.root,
             &self.project,
@@ -376,7 +377,6 @@ impl Adapter for KubernetesAdapter {
     }
 }
 
-/// `v1.31.2` from `kubectl version --client -o json`.
 fn client_version(json: &str) -> String {
     serde_json::from_str::<serde_json::Value>(json)
         .ok()
@@ -384,7 +384,6 @@ fn client_version(json: &str) -> String {
         .unwrap_or_else(|| "unknown version".to_owned())
 }
 
-/// What `gozo status` and `gozo env` need from a Deployment object.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct DeploymentInfo {
     pub desired: u32,
@@ -400,7 +399,6 @@ pub(crate) struct DeploymentInfo {
 }
 
 impl DeploymentInfo {
-    /// The message of the first condition that is not `True`, if any.
     fn problem(&self) -> Option<String> {
         self.conditions
             .iter()
@@ -415,8 +413,7 @@ impl DeploymentInfo {
     }
 }
 
-/// Parse `kubectl get deployment -o json`, reading the image and env from
-/// the container named `container` (falling back to the first container).
+/// Image and env come from the container named `container`, else the first one.
 pub(crate) fn parse_deployment(json: &str, container: &str) -> Result<DeploymentInfo> {
     let v: serde_json::Value = serde_json::from_str(json)
         .map_err(|e| DeployError::Other(format!("could not parse kubectl output: {e}")))?;
@@ -537,7 +534,6 @@ mod tests {
             ]
         );
         assert!(info.problem().is_none());
-        // unknown container name falls back to the first container
         let first = parse_deployment(DEPLOYMENT, "nope").unwrap();
         assert_eq!(first.image.as_deref(), Some("envoy:1.30"));
     }
@@ -554,7 +550,6 @@ mod tests {
             Some("Deployment does not have minimum availability.")
         );
         assert!(info.since.is_none());
-        // no status at all: fresh object
         let bare = parse_deployment(r#"{"spec":{}}"#, "api").unwrap();
         assert_eq!((bare.ready, bare.desired), (0, 1));
         assert!(bare.available);

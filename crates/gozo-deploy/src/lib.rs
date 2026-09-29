@@ -1,8 +1,4 @@
-//! Deployment target adapters.
-//!
-//! An adapter turns the abstract verbs `deploy`, `status`, `logs`, `rollback`
-//! and `env` into concrete `docker` / `kubectl` invocations. The CLI never
-//! talks to those tools directly.
+//! Deployment target adapters: the deploy verbs as concrete `docker` / `kubectl` invocations.
 
 pub mod docker;
 mod image;
@@ -39,19 +35,14 @@ pub enum DeployError {
 
 pub type Result<T> = std::result::Result<T, DeployError>;
 
-/// Progress sink so adapters can narrate without knowing about colors or TTYs.
 pub trait Reporter {
-    /// A high-level step, rendered as `> message`.
     fn step(&mut self, msg: &str);
-    /// A command about to run, rendered dimmed. Only shown in debug/verbose.
+    /// A command about to run; only shown in verbose mode.
     fn command(&mut self, cmd: &str);
-    /// Secondary information under a step.
     fn detail(&mut self, msg: &str);
-    /// A non-fatal problem.
     fn warn(&mut self, msg: &str);
 }
 
-/// A no-op reporter for JSON mode and tests.
 pub struct SilentReporter;
 impl Reporter for SilentReporter {
     fn step(&mut self, _: &str) {}
@@ -65,31 +56,24 @@ pub struct DeployRequest {
     pub root: PathBuf,
     pub project_name: String,
     pub environment: Environment,
-    /// Image tag to build (usually the short git SHA or a timestamp).
     pub tag: String,
     pub git_sha: Option<String>,
     pub git_branch: Option<String>,
-    /// Variables for the build step (`--build-env`).
     pub build_env: BTreeMap<String, String>,
-    /// Runtime variables for the deployed process (`--env` plus the env store).
+    /// `--env` merged over the env store.
     pub runtime_env: BTreeMap<String, String>,
-    /// Print the underlying tool output (`--logs`).
+    /// Stream the underlying tool output (`--logs`).
     pub verbose: bool,
-    /// Do everything except the final apply/run (`--dry-run`).
     pub dry_run: bool,
-    /// Skip the build cache (`--force`).
+    /// Skip the build cache.
     pub force: bool,
-    /// Return as soon as the rollout is requested (`--no-wait`).
     pub no_wait: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DeployOutcome {
-    /// Full image reference that was deployed.
     pub image: String,
-    /// Where the service is reachable, when the adapter can tell.
     pub url: Option<String>,
-    /// A command the user can run to inspect the rollout.
     pub inspect: Option<String>,
 }
 
@@ -97,13 +81,12 @@ pub struct DeployOutcome {
 pub struct TargetStatus {
     pub target: Target,
     pub healthy: bool,
-    /// Short human summary, e.g. `3/3 replicas ready`.
+    /// e.g. `3/3 replicas ready`.
     pub summary: String,
     pub image: Option<String>,
     pub ready: Option<u32>,
     pub desired: Option<u32>,
     pub since: Option<String>,
-    /// Raw JSON from the underlying tool, for `--json`.
     pub raw: serde_json::Value,
 }
 
@@ -112,45 +95,36 @@ pub struct LogOptions {
     pub follow: bool,
     /// e.g. `1h`, `30m`, or an RFC3339 timestamp.
     pub since: Option<String>,
-    /// Maximum lines from the tail.
     pub limit: Option<usize>,
     pub container: Option<String>,
-    /// Ask the tool for timestamps.
     pub timestamps: bool,
 }
 
 #[derive(Debug, Clone)]
 pub enum RollbackTo<'a> {
-    /// Whatever the target considers the previous revision.
     Previous,
-    /// A specific recorded deployment.
     Deployment(&'a Deployment),
 }
 
 pub trait Adapter {
     fn target(&self) -> Target;
 
-    /// Verify required tools exist and the target is reachable. Each entry is
-    /// `(what, ok, detail)`.
+    /// Each entry is `(what, ok, detail)`.
     fn preflight(&self, r: &mut dyn Reporter) -> Result<Vec<(String, bool, String)>>;
 
     fn deploy(&self, req: &DeployRequest, r: &mut dyn Reporter) -> Result<DeployOutcome>;
 
     fn status(&self) -> Result<TargetStatus>;
 
-    /// A ready-to-spawn command that streams logs to the inherited stdout.
     fn logs_command(&self, opts: &LogOptions) -> Result<Command>;
 
     fn rollback(&self, to: RollbackTo<'_>, r: &mut dyn Reporter) -> Result<()>;
 
-    /// Runtime environment currently configured on the target.
     fn env(&self) -> Result<Vec<(String, String)>>;
 
-    /// A short description of where this adapter points, for `gozo status`.
     fn describe(&self) -> String;
 
-    /// How long to wait for a rollout (deploy or rollback) before giving up.
-    /// Adapters that cannot wait ignore it.
+    /// Rollout wait limit; adapters that cannot wait ignore it.
     fn set_timeout(&mut self, _secs: u64) {}
 }
 
@@ -168,46 +142,32 @@ pub fn age(from: DateTime<Utc>, now: DateTime<Utc>) -> String {
     }
 }
 
-/// `age` relative to now.
-pub fn age_now(from: DateTime<Utc>) -> String {
-    age(from, Utc::now())
-}
-
-/// Build the adapter for a linked directory. `config` supplies defaults when
-/// the link leaves fields empty.
 pub fn adapter_for(link: &Link, config: &Config, root: &Path) -> Result<Box<dyn Adapter>> {
+    let docker = link
+        .docker
+        .clone()
+        .unwrap_or_else(|| config.deploy.docker.clone());
     match link.target {
-        Target::Docker => {
-            let cfg = link
-                .docker
-                .clone()
-                .unwrap_or_else(|| config.deploy.docker.clone());
-            Ok(Box::new(docker::DockerAdapter::new(
-                root,
-                &link.project_name,
-                cfg,
-            )))
-        }
+        Target::Docker => Ok(Box::new(docker::DockerAdapter::new(
+            root,
+            &link.project_name,
+            docker,
+        ))),
         Target::Kubernetes => {
             let k = link
                 .kubernetes
                 .clone()
                 .unwrap_or_else(|| config.deploy.kubernetes.clone());
-            let d = link
-                .docker
-                .clone()
-                .unwrap_or_else(|| config.deploy.docker.clone());
             Ok(Box::new(kubernetes::KubernetesAdapter::new(
                 root,
                 &link.project_name,
                 k,
-                d,
+                docker,
             )))
         }
     }
 }
 
-/// Run a command, capturing output. Shared by adapters.
 pub(crate) fn run_capture(mut cmd: Command, r: &mut dyn Reporter) -> Result<String> {
     let display = format_command(&cmd);
     r.command(&display);
@@ -228,7 +188,6 @@ pub(crate) fn run_capture(mut cmd: Command, r: &mut dyn Reporter) -> Result<Stri
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-/// Run a command with inherited stdio (for long builds when `--logs` is set).
 pub(crate) fn run_inherit(mut cmd: Command, r: &mut dyn Reporter) -> Result<()> {
     let display = format_command(&cmd);
     r.command(&display);

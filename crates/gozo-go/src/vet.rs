@@ -1,6 +1,5 @@
-//! `go vet -json`: one JSON object per package, keyed by package path, then
-//! analyzer name, then a list of `{posn, message}` findings. Older Go versions
-//! print a `# pkg` comment line before each object.
+//! `go vet -json`: one object per package, keyed by package path then analyzer
+//! name, each a list of `{posn, message}`. Older Go prints `# pkg` lines between objects.
 
 use std::ffi::OsStr;
 use std::path::Path;
@@ -13,19 +12,17 @@ use crate::command::{Go, GoError, GoOutput};
 pub struct VetIssue {
     pub package: String,
     pub analyzer: String,
-    /// `file:line:col` exactly as vet printed it (file is usually absolute).
     pub posn: String,
     pub message: String,
 }
 
 impl VetIssue {
-    /// Split `posn` into `(file, line, col)`. Missing parts are `0`.
     pub fn location(&self) -> (&str, u32, u32) {
         split_posn(&self.posn)
     }
 }
 
-/// Split `file:line:col` from the right so Windows drive letters survive.
+/// `(file, line, col)` split from the right so Windows drive letters survive; missing parts are `0`.
 pub fn split_posn(posn: &str) -> (&str, u32, u32) {
     let mut parts = posn.rsplitn(3, ':');
     let last = parts.next().unwrap_or("");
@@ -34,7 +31,6 @@ pub fn split_posn(posn: &str) -> (&str, u32, u32) {
     match (first, mid) {
         (Some(file), Some(line)) => match (line.parse::<u32>(), last.parse::<u32>()) {
             (Ok(l), Ok(c)) => (file, l, c),
-            // `file:line` where `line` failed to parse as col means two parts only.
             _ => (posn, 0, 0),
         },
         (None, Some(file)) => match last.parse::<u32>() {
@@ -47,13 +43,11 @@ pub fn split_posn(posn: &str) -> (&str, u32, u32) {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct VetReport {
-    /// Number of package objects seen (one per vetted package).
     pub packages: usize,
     pub issues: Vec<VetIssue>,
 }
 
-/// Parse the stdout of `go vet -json`. Tolerates `# pkg` header lines, empty
-/// `{}` objects and trailing garbage.
+/// Tolerates `# pkg` header lines, empty `{}` objects and trailing garbage.
 pub fn parse_vet_json(stdout: &str) -> VetReport {
     let body: String = stdout
         .lines()
@@ -91,8 +85,8 @@ pub fn parse_vet_json(stdout: &str) -> VetReport {
 }
 
 impl Go {
-    /// `go vet -json <patterns>` in `dir`. Never fails on a non-zero exit (vet
-    /// exits 1 when it finds something); inspect `GoOutput` for build errors.
+    /// Never fails on a non-zero exit (vet exits 1 when it finds something);
+    /// inspect the `GoOutput` for build errors.
     pub fn vet<I, S>(&self, dir: &Path, patterns: I) -> Result<(GoOutput, VetReport), GoError>
     where
         I: IntoIterator<Item = S>,

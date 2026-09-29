@@ -72,8 +72,5 @@ jobs:
         with:
           shared-cache-key: gozo-debug-build
 
-      # verify = turbo run quality lint check-types: ultracite, rust fmt, clippy, tests,
-      # plus lint/check-types of every JS package.
-      # Rust tasks are cached by turbo so a PR touching only docs is fast.
       - name: Quality
         run: bun run verify

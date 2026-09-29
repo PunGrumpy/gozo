@@ -1,7 +1,5 @@
-//! Events emitted by `go test -json` (the `test2json` format).
-//!
-//! One JSON object per line. Go 1.24+ additionally emits `build-output` and
-//! `build-fail` events keyed by `ImportPath` rather than `Package`.
+//! `go test -json` events (test2json), one object per line. Go 1.24+ also
+//! emits `build-output`/`build-fail` keyed by `ImportPath` instead of `Package`.
 
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +13,7 @@ pub struct TestEvent {
     pub package: Option<String>,
     #[serde(default)]
     pub test: Option<String>,
-    /// Seconds, present on `pass`/`fail`/`skip`.
+    /// Seconds; present on `pass`/`fail`/`skip`.
     #[serde(default)]
     pub elapsed: Option<f64>,
     #[serde(default)]
@@ -23,7 +21,6 @@ pub struct TestEvent {
     /// Set on `build-output`/`build-fail` events (Go 1.24+).
     #[serde(default)]
     pub import_path: Option<String>,
-    /// Set on a package `fail` event when the failure was a build error.
     #[serde(default)]
     pub failed_build: Option<String>,
 }
@@ -45,8 +42,7 @@ pub enum TestAction {
 }
 
 impl TestEvent {
-    /// Parse one line of `go test -json` output. Returns `None` for lines that
-    /// are not events (older Go versions print build errors as plain text).
+    /// `None` for non-event lines (older Go prints build errors as plain text).
     pub fn parse(line: &str) -> Option<TestEvent> {
         let line = line.trim();
         if !line.starts_with('{') {
@@ -72,8 +68,7 @@ impl TestEvent {
         }
     }
 
-    /// The package this event is about. Build events carry `ImportPath`, which
-    /// may be suffixed like `pkg [pkg.test]` for test binaries.
+    /// `Package`, else `ImportPath` without a `[pkg.test]` test-binary suffix.
     pub fn package_path(&self) -> Option<&str> {
         self.package.as_deref().or_else(|| {
             self.import_path
@@ -82,7 +77,6 @@ impl TestEvent {
         })
     }
 
-    /// `Output` with the trailing newline removed.
     pub fn output_line(&self) -> Option<&str> {
         self.output
             .as_deref()

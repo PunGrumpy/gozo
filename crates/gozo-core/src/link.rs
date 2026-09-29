@@ -1,7 +1,4 @@
-//! `.gozo/project.json`: binds a local directory to a deployment target.
-//!
-//! Mirrors Vercel's `.vercel/project.json`: machine-local, never committed,
-//! created by `gozo link` and consulted by every command that needs a target.
+//! `.gozo/project.json`: machine-local, uncommitted binding of a directory to a deployment target.
 
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -94,8 +91,7 @@ impl Link {
             })
     }
 
-    /// Write the link, the explanatory README, and add `.gozo` to .gitignore
-    /// when the project is a git repository.
+    /// Also writes `.gozo/README.txt` and gitignores `.gozo` in git repositories.
     pub fn save(&self, root: &Path) -> Result<()> {
         let dir = Self::dir(root);
         std::fs::create_dir_all(&dir)?;
@@ -138,7 +134,6 @@ No, you should not commit the \".gozo\" folder. It may contain secrets and
 machine-specific settings. It is added to \".gitignore\" automatically.
 ";
 
-/// Append `.gozo` to `.gitignore` if the root is a git repo and it is missing.
 pub fn ensure_gitignore(root: &Path) -> Result<bool> {
     if !root.join(".git").exists() {
         return Ok(false);
@@ -146,8 +141,7 @@ pub fn ensure_gitignore(root: &Path) -> Result<bool> {
     ensure_gitignore_entry(root, STATE_DIR)
 }
 
-/// Whether `.gitignore` already lists `entry` (with or without a leading `/`
-/// or trailing `/`).
+/// Matches `entry` with or without a leading or trailing `/`.
 pub fn gitignore_has(root: &Path, entry: &str) -> bool {
     let existing = std::fs::read_to_string(root.join(".gitignore")).unwrap_or_default();
     let entry = entry.trim_matches('/');
@@ -157,8 +151,7 @@ pub fn gitignore_has(root: &Path, entry: &str) -> bool {
         .any(|l| l.trim_start_matches('/').trim_end_matches('/') == entry)
 }
 
-/// Append `entry` to `.gitignore` (creating the file) unless already listed.
-/// Returns whether the file was changed. Does not check for a git repo.
+/// Returns whether `.gitignore` was changed.
 pub fn ensure_gitignore_entry(root: &Path, entry: &str) -> Result<bool> {
     if gitignore_has(root, entry) {
         return Ok(false);

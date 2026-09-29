@@ -1,5 +1,3 @@
-//! `gozo update`: replace this binary with the latest GitHub release.
-
 use std::cmp::Ordering;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -47,7 +45,7 @@ struct Release {
 pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     let want = args.version.as_deref().map(strip_v);
     let url = match want {
-        // Releases are tagged `gozo@<version>` by `changeset publish`.
+        // `changeset publish` tags releases `gozo@<version>`.
         Some(v) => format!("https://api.github.com/repos/{REPO}/releases/tags/gozo@{v}"),
         None => format!("https://api.github.com/repos/{REPO}/releases/latest"),
     };
@@ -107,7 +105,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
         return Ok(ExitCode::SUCCESS);
     }
 
-    // Install: only when newer, or when an explicit version was requested.
+    // An explicit --version may downgrade; otherwise only install newer releases.
     if !(newer || (want.is_some() && differs)) {
         if ctx.json {
             ctx.out.json_value(&UpdateDoc {
@@ -189,7 +187,7 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-/// GET a GitHub release document. `None` on 404 (no releases, or unknown tag).
+/// `None` on 404 (no releases yet, or unknown tag).
 fn fetch_release(url: &str) -> anyhow::Result<Option<Release>> {
     let mut resp = ureq::get(url)
         .header("User-Agent", format!("gozo/{CURRENT}"))
@@ -234,11 +232,10 @@ fn fetch_release(url: &str) -> anyhow::Result<Option<Release>> {
     }))
 }
 
-/// Pull the `gozo` binary out of a `.tar.gz` and write it to `dest` (mode 755).
 fn extract_binary(archive: &Path, dest: &Path) -> anyhow::Result<()> {
     let file = std::fs::File::open(archive)?;
     let mut tar = tar::Archive::new(flate2::read::GzDecoder::new(file));
-    let wanted = if cfg!(windows) { "gozo.exe" } else { "gozo" };
+    let wanted = super::util::exe_name("gozo");
     for entry in tar.entries()? {
         let mut entry = entry?;
         let is_bin = entry
@@ -260,12 +257,12 @@ fn extract_binary(archive: &Path, dest: &Path) -> anyhow::Result<()> {
     anyhow::bail!("archive does not contain a {wanted} binary")
 }
 
-/// `gozo-<os>-<arch>.tar.gz` for this machine.
-pub fn asset_name() -> Option<String> {
+fn asset_name() -> Option<String> {
     asset_name_for(std::env::consts::OS, std::env::consts::ARCH)
 }
 
-pub fn asset_name_for(os: &str, arch: &str) -> Option<String> {
+/// `gozo-<os>-<arch>.tar.gz`; `None` when no prebuilt binary is published.
+fn asset_name_for(os: &str, arch: &str) -> Option<String> {
     let os = match os {
         "linux" => "linux",
         "macos" => "darwin",
@@ -280,17 +277,16 @@ pub fn asset_name_for(os: &str, arch: &str) -> Option<String> {
     Some(format!("gozo-{os}-{arch}.tar.gz"))
 }
 
-/// Normalize a tag or version string: `gozo@1.2.3`, `v1.2.3` and `1.2.3` all
-/// become `1.2.3`.
-pub fn strip_v(v: &str) -> &str {
+/// `gozo@1.2.3`, `v1.2.3` and `1.2.3` all become `1.2.3`.
+fn strip_v(v: &str) -> &str {
     let v = v.trim();
     let v = v.strip_prefix("gozo@").unwrap_or(v);
     v.trim_start_matches(['v', 'V'])
 }
 
-/// Compare `x.y.z` strings numerically; a pre-release suffix sorts below the
-/// plain release (`1.2.0-rc1 < 1.2.0`). Unparseable parts count as 0.
-pub fn compare_versions(a: &str, b: &str) -> Ordering {
+/// Numeric `x.y.z` comparison; a pre-release sorts below the plain release
+/// (`1.2.0-rc1 < 1.2.0`) and unparseable parts count as 0.
+fn compare_versions(a: &str, b: &str) -> Ordering {
     fn parts(v: &str) -> (Vec<u64>, Option<String>) {
         let v = strip_v(v);
         let (nums, pre) = match v.split_once('-') {

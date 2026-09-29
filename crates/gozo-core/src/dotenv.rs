@@ -1,11 +1,9 @@
-//! Minimal `.env` reader and writer.
-//!
-//! Supports `KEY=value`, `export KEY=value`, single and double quotes,
-//! `\n` escapes inside double quotes, and `#` comments.
+//! Minimal `.env` reader and writer: `KEY=value`, `export KEY=value`, single
+//! and double quotes, `\n` escapes inside double quotes, `#` comments.
 
 use std::path::Path;
 
-/// Parse dotenv text into ordered key/value pairs. Later keys override earlier ones.
+/// Ordered key/value pairs; later keys override earlier ones.
 pub fn parse(text: &str) -> Vec<(String, String)> {
     let mut out: Vec<(String, String)> = Vec::new();
     for raw in text.lines() {
@@ -62,14 +60,13 @@ fn unquote(v: &str) -> String {
     if v.len() >= 2 && v.starts_with('\'') && v.ends_with('\'') {
         return v[1..v.len() - 1].to_owned();
     }
-    // Unquoted: strip a trailing comment.
     match v.find(" #") {
         Some(i) => v[..i].trim_end().to_owned(),
         None => v.to_owned(),
     }
 }
 
-/// Read and parse a file. A missing file yields an empty list.
+/// A missing file yields an empty list.
 pub fn load(path: &Path) -> std::io::Result<Vec<(String, String)>> {
     match std::fs::read_to_string(path) {
         Ok(t) => Ok(parse(&t)),
@@ -78,22 +75,6 @@ pub fn load(path: &Path) -> std::io::Result<Vec<(String, String)>> {
     }
 }
 
-/// Load several files in order; later files override earlier keys.
-pub fn load_layered(paths: &[std::path::PathBuf]) -> std::io::Result<Vec<(String, String)>> {
-    let mut merged: Vec<(String, String)> = Vec::new();
-    for p in paths {
-        for (k, v) in load(p)? {
-            if let Some(slot) = merged.iter_mut().find(|(mk, _)| *mk == k) {
-                slot.1 = v;
-            } else {
-                merged.push((k, v));
-            }
-        }
-    }
-    Ok(merged)
-}
-
-/// Render pairs as dotenv text. Values are quoted only when needed.
 pub fn render(vars: &[(String, String)], header: Option<&str>) -> String {
     let mut out = String::new();
     if let Some(h) = header {

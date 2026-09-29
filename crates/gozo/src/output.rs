@@ -2,7 +2,7 @@ use std::io::Write;
 
 use serde::Serialize;
 
-/// stdout sink for primary results.
+/// stdout sink for a command's primary result.
 pub struct Output {
     pub json: bool,
 }
@@ -12,7 +12,6 @@ impl Output {
         Output { json }
     }
 
-    /// Pretty JSON document on stdout.
     pub fn json_value<T: Serialize>(&self, value: &T) -> anyhow::Result<()> {
         let mut stdout = std::io::stdout().lock();
         serde_json::to_writer_pretty(&mut stdout, value)?;
@@ -20,7 +19,7 @@ impl Output {
         Ok(())
     }
 
-    /// Compact single-line JSON on stdout (JSON Lines).
+    /// One compact JSON document per line (JSON Lines).
     pub fn json_line<T: Serialize>(&self, value: &T) -> anyhow::Result<()> {
         let mut stdout = std::io::stdout().lock();
         serde_json::to_writer(&mut stdout, value)?;
@@ -28,13 +27,12 @@ impl Output {
         Ok(())
     }
 
-    /// A plain line on stdout: the primary result in human mode.
     pub fn line(&self, s: impl AsRef<str>) {
         let _ = writeln!(std::io::stdout(), "{}", s.as_ref());
     }
 
-    /// Report a fatal error. JSON mode writes `{"schema":"gozo.error/v1",...}`
-    /// to stdout so agents always get a parseable document; otherwise stderr.
+    /// `--json` writes `gozo.error/v1` to stdout so callers always get a
+    /// parseable document; otherwise `Error: ...` on stderr.
     pub fn error(&self, err: &anyhow::Error) {
         if self.json {
             let _ = self.json_value(&ErrorDoc {

@@ -1,9 +1,6 @@
 #!/usr/bin/env node
-// Copies packages/gozo/package.json's version (owned by changesets) into the
-// Cargo workspace so `gozo --version`, crates.io and npm always agree.
-//
-// Cargo.lock is patched directly instead of running `cargo update`, so this
-// works on a bare CI runner with no Rust toolchain or registry cache.
+// Syncs the changesets-owned version into Cargo.toml and Cargo.lock without
+// cargo, so it works on a bare CI runner with no toolchain or registry cache.
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -42,8 +39,7 @@ writeFileSync(
   toml.replace(WORKSPACE_VERSION, `$<head>${version}$<tail>`)
 );
 
-// Workspace members are the [[package]] blocks without a `source` line
-// (registry and git dependencies always carry one). Bump only those.
+// Only workspace members lack a `source` line in Cargo.lock.
 const cargoLock = path.join(root, "Cargo.lock");
 const lock = readFileSync(cargoLock, "utf-8");
 const blocks = lock.split("\n[[package]]\n");

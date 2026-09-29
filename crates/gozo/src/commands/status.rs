@@ -1,15 +1,13 @@
-//! `gozo status`: the live state of the linked target plus the latest
-//! recorded deployment.
-
 use std::process::ExitCode;
 
 use anyhow::Context as _;
 use chrono::Utc;
 use gozo_core::{Deployment, DeploymentHistory, Target};
-use owo_colors::{OwoColorize, Stream::Stdout};
 use serde::Serialize;
 
+use super::util::exit_for;
 use crate::ctx::Ctx;
+use crate::style::{Mark, bold, dim, mark};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {}
@@ -43,14 +41,16 @@ pub fn run(ctx: &mut Ctx, _args: Args) -> anyhow::Result<ExitCode> {
         return Ok(exit_for(status.healthy));
     }
 
-    let health = format!("{} {}", mark(ctx.ui.color, status.healthy), status.summary);
-    println!();
-    kv(
-        "project",
-        &ctx.project_name()
-            .if_supports_color(Stdout, |t| t.bold())
-            .to_string(),
+    let health = format!(
+        "{} {}",
+        mark(
+            ctx.ui.color,
+            if status.healthy { Mark::Ok } else { Mark::Fail }
+        ),
+        status.summary
     );
+    println!();
+    kv("project", &bold(&ctx.project_name()));
     kv(
         "target",
         &format!("{} ({})", status.target, adapter.describe()),
@@ -77,30 +77,8 @@ pub fn run(ctx: &mut Ctx, _args: Args) -> anyhow::Result<ExitCode> {
     Ok(exit_for(status.healthy))
 }
 
-fn exit_for(healthy: bool) -> ExitCode {
-    if healthy {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    }
-}
-
-/// Aligned `label   value` on stdout, matching `Ui::kv`.
 fn kv(label: &str, value: &str) {
-    println!(
-        "  {} {}",
-        format!("{label:<11}").if_supports_color(Stdout, |t| t.dimmed()),
-        value
-    );
-}
-
-fn mark(color: bool, ok: bool) -> String {
-    match (color, ok) {
-        (true, true) => "✓".if_supports_color(Stdout, |t| t.green()).to_string(),
-        (true, false) => "✗".if_supports_color(Stdout, |t| t.red()).to_string(),
-        (false, true) => "OK".to_owned(),
-        (false, false) => "FAIL".to_owned(),
-    }
+    println!("  {} {}", dim(&format!("{label:<11}")), value);
 }
 
 #[derive(Serialize)]

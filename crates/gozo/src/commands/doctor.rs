@@ -1,9 +1,10 @@
 use std::process::ExitCode;
 
-use crate::style::{bold, dim, green, red, yellow};
 use gozo_doctor::{Options, Report, Status};
 
+use super::util::{exit_for, plural};
 use crate::ctx::Ctx;
+use crate::style::{bold, dim, green, red, yellow};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -27,15 +28,10 @@ pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     } else {
         print_human(&report);
     }
-
-    Ok(if report.healthy() {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    })
+    Ok(exit_for(report.healthy()))
 }
 
-pub fn print_human(r: &Report) {
+fn print_human(r: &Report) {
     println!();
     println!("  {}", bold("gozo doctor"));
     println!();
@@ -88,18 +84,10 @@ pub fn print_human(r: &Report) {
     let s = &r.summary;
     let mut parts = vec![green(&format!("{} ok", s.ok))];
     if s.warn > 0 {
-        parts.push(yellow(&format!(
-            "{} warning{}",
-            s.warn,
-            if s.warn == 1 { "" } else { "s" }
-        )));
+        parts.push(yellow(&format!("{} warning{}", s.warn, plural(s.warn))));
     }
     if s.fail > 0 {
-        parts.push(red(&format!(
-            "{} error{}",
-            s.fail,
-            if s.fail == 1 { "" } else { "s" }
-        )));
+        parts.push(red(&format!("{} error{}", s.fail, plural(s.fail))));
     }
     if s.skip > 0 {
         parts.push(dim(&format!("{} skipped", s.skip)));

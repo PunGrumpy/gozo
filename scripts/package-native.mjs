@@ -1,11 +1,6 @@
 #!/usr/bin/env node
-// Turns built binaries into npm platform packages (gozo-linux-64, ...), the
-// way vercel/turborepo's turbo-releaser does for `turbo`.
-//
-//   node scripts/package-native.mjs --version 0.2.0 --artifacts ./release-artifacts --out ./packages/gozo/npm
-//
-// Expects <artifacts>/gozo-<os>-<arch>/gozo[.exe] where os/arch follow the
-// release asset naming (linux|darwin|windows, x86_64|aarch64).
+// Usage: node scripts/package-native.mjs --version 0.2.0 --artifacts DIR --out DIR
+// Expects DIR/gozo-<os>-<arch>/gozo[.exe] and writes one npm package per platform.
 import {
   chmodSync,
   copyFileSync,
@@ -20,8 +15,7 @@ const root = path.resolve(import.meta.dirname, "..");
 const EXECUTABLE = 0o755;
 const JSON_INDENT = 2;
 
-// asset name -> npm package facts. `os` follows Node's process.platform values
-// npm checks against; linux binaries also run on Android (Termux).
+// Linux binaries also run on Android (Termux), hence both `os` values.
 const PLATFORMS = [
   {
     asset: "gozo-linux-x86_64",

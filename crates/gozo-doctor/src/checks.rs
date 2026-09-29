@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use gozo_go::{Go, GoVersion, ModuleInfo, Project, ProjectKind, TidyStatus};
 
@@ -12,7 +12,6 @@ pub struct Context<'a> {
     pub opts: &'a Options,
     pub version: Option<GoVersion>,
     pub env: Option<BTreeMap<String, String>>,
-    /// Cached `go list -m -u -json all`, keyed by module path. Loaded lazily.
     modules: Option<Result<Vec<ModuleInfo>, String>>,
     findings: Vec<Finding>,
 }
@@ -30,10 +29,6 @@ impl<'a> Context<'a> {
         }
     }
 
-    fn push(&mut self, f: Finding) {
-        self.findings.push(f);
-    }
-
     fn env_var(&self, key: &str) -> Option<&str> {
         self.env
             .as_ref()
@@ -41,7 +36,7 @@ impl<'a> Context<'a> {
             .map(String::as_str)
     }
 
-    /// Module list with updates. Runs at most once. `None` when offline.
+    /// `None` when offline.
     fn modules(&mut self) -> Option<&Result<Vec<ModuleInfo>, String>> {
         if self.opts.offline {
             return None;
@@ -54,9 +49,8 @@ impl<'a> Context<'a> {
         self.modules.as_ref()
     }
 
-    /// Directory from which `go list -m all` sees the whole project.
-    /// In a workspace, any module dir works and reports every module.
-    fn list_dir(&self) -> std::path::PathBuf {
+    /// In a workspace, `go list -m all` from any module dir reports every module.
+    fn list_dir(&self) -> PathBuf {
         match self.project.kind {
             ProjectKind::Workspace => self
                 .project
@@ -101,7 +95,6 @@ impl<'a> Context<'a> {
     }
 }
 
-/// `go` is installed and reports a parseable version.
 pub fn toolchain(cx: &mut Context) {
     let f = match &cx.version {
         Some(v) => Finding::new(
@@ -118,10 +111,9 @@ pub fn toolchain(cx: &mut Context) {
         .detail(cx.go.bin.display().to_string())
         .hint("run `go version` and check the installation"),
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// Every module's go.mod parses.
 pub fn gomod_valid(cx: &mut Context) {
     let bad: Vec<String> = cx
         .project
@@ -148,23 +140,19 @@ pub fn gomod_valid(cx: &mut Context) {
         )
         .details(bad)
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// The installed toolchain satisfies each module's `go` directive.
 pub fn go_directive(cx: &mut Context) {
     let Some(installed) = cx.version.clone() else {
-        cx.push(Finding::new(
+        cx.findings.push(Finding::new(
             "go.directive",
             Status::Skip,
             "go directive not checked: toolchain unknown",
         ));
         return;
     };
-    let auto = cx
-        .env_var("GOTOOLCHAIN")
-        .map(|v| v != "local")
-        .unwrap_or(true);
+    let auto = cx.env_var("GOTOOLCHAIN") != Some("local");
     let mut unmet = Vec::new();
     let mut highest: Option<GoVersion> = None;
     for m in &cx.project.modules {
@@ -175,7 +163,7 @@ pub fn go_directive(cx: &mut Context) {
         if !installed.satisfies(&req) {
             unmet.push(format!("{} requires go {}", m.rel, req));
         }
-        if highest.as_ref().map(|h| req > *h).unwrap_or(true) {
+        if highest.as_ref().is_none_or(|h| req > *h) {
             highest = Some(req);
         }
     }
@@ -211,10 +199,9 @@ pub fn go_directive(cx: &mut Context) {
         .details(unmet)
         .hint("upgrade Go or set GOTOOLCHAIN=auto")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// go.work `use` entries exist and its `go` line is not older than its modules.
 pub fn workspace(cx: &mut Context) {
     let Some(work) = &cx.project.work else {
         return;
@@ -250,10 +237,9 @@ pub fn workspace(cx: &mut Context) {
             .details(problems)
             .hint("run `go work sync` or fix the `use` entries")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// `go mod tidy` would not change go.mod or go.sum.
 pub fn tidy(cx: &mut Context) {
     let mut dirty = Vec::new();
     let mut unknown = Vec::new();
@@ -314,6 +300,8 @@ pub fn tidy(cx: &mut Context) {
         .details(unknown)
         .hint("run `go mod download` then re-run doctor")
     } else if !sibling_dep.is_empty() {
+        // `go mod tidy` ignores go.work, so a module that imports a sibling
+        // workspace module cannot be tidied in isolation.
         Finding::new(
             "go.tidy",
             Status::Skip,
@@ -324,10 +312,9 @@ pub fn tidy(cx: &mut Context) {
     } else {
         Finding::new("go.tidy", Status::Ok, "go.mod and go.sum are tidy")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// Local `replace` directives stay inside the project root.
 pub fn replace_outside(cx: &mut Context) {
     let root = cx
         .project
@@ -385,14 +372,13 @@ pub fn replace_outside(cx: &mut Context) {
         .details(outside)
         .hint("these builds will not reproduce on another machine or in CI")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// Dependencies with a newer version available.
 pub fn outdated(cx: &mut Context) {
     let tools = tool_modules(cx);
     let Some(result) = cx.modules() else {
-        cx.push(Finding::new(
+        cx.findings.push(Finding::new(
             "deps.outdated",
             Status::Skip,
             "dependency updates not checked (offline)",
@@ -408,7 +394,7 @@ pub fn outdated(cx: &mut Context) {
                 "dependency updates could not be listed",
             )
             .detail(e.clone());
-            cx.push(f);
+            cx.findings.push(f);
             return;
         }
     };
@@ -442,10 +428,9 @@ pub fn outdated(cx: &mut Context) {
         }
         f.hint("run `go get -u ./...` or update selectively")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// Tools declared with `tool` directives, and whether their modules are current.
 pub fn tools(cx: &mut Context) {
     let declared: Vec<String> = cx
         .project
@@ -466,7 +451,7 @@ pub fn tools(cx: &mut Context) {
             format!("{} tool{} declared in go.mod", n, plural(n)),
         )
         .details(declared);
-        cx.push(f);
+        cx.findings.push(f);
         return;
     };
     let stale: Vec<String> = mods
@@ -494,27 +479,25 @@ pub fn tools(cx: &mut Context) {
         .details(stale)
         .hint("run `go get -tool <path>@latest`")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// CGO is enabled but no C compiler is reachable, so builds will fail.
 pub fn cgo(cx: &mut Context) {
     if cx.env.is_none() {
-        cx.push(Finding::new(
+        cx.findings.push(Finding::new(
             "cgo",
             Status::Skip,
             "CGO not checked: `go env` failed",
         ));
         return;
     }
-    let enabled = cx.env_var("CGO_ENABLED") == Some("1");
-    if !enabled {
-        cx.push(Finding::new("cgo", Status::Ok, "CGO disabled"));
+    if cx.env_var("CGO_ENABLED") != Some("1") {
+        cx.findings
+            .push(Finding::new("cgo", Status::Ok, "CGO disabled"));
         return;
     }
     let cc = cx.env_var("CC").unwrap_or("gcc").to_owned();
-    let found = which(&cc);
-    let f = if found {
+    let f = if which(&cc) {
         Finding::new(
             "cgo",
             Status::Ok,
@@ -529,10 +512,9 @@ pub fn cgo(cx: &mut Context) {
         .detail("packages that import \"C\" will fail to build")
         .hint("install a C toolchain or set CGO_ENABLED=0")
     };
-    cx.push(f);
+    cx.findings.push(f);
 }
 
-/// If `text` mentions a module that belongs to this workspace, return its path.
 fn sibling_module_in(cx: &Context, text: &str) -> Option<String> {
     cx.project
         .modules
@@ -572,9 +554,9 @@ fn update_line(m: &ModuleInfo) -> String {
     )
 }
 
-fn normalize(p: &Path) -> std::path::PathBuf {
+fn normalize(p: &Path) -> PathBuf {
     use std::path::Component;
-    let mut out = std::path::PathBuf::new();
+    let mut out = PathBuf::new();
     for c in p.components() {
         match c {
             Component::ParentDir => {
