@@ -70,13 +70,8 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      # version-packages runs scripts/sync-version.mjs, which needs cargo to
-      # refresh Cargo.lock after copying the version into Cargo.toml.
-      - name: Setup Rust
-        uses: ./.github/actions/setup-rust
-        with:
-          cache: "false"
-
+      # version-packages runs scripts/sync-version.mjs, which patches Cargo.toml
+      # and Cargo.lock directly, so no Rust toolchain is needed here.
       - name: Create or update the version PR
         uses: changesets/action/version@v2
         with:

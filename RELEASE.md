@@ -8,7 +8,7 @@ The automation follows [changesets.dev/guide/automating](https://changesets.dev/
 
 1. **Every PR with a user-facing change adds a changeset** (`bunx changeset`). `changeset-status.yml` comments on the PR whether one is present (non-blocking).
 2. **On push to `main`**, `release.yml` runs `changesets/action/select-mode`:
-   - `version` (changesets pending): `changesets/action/version` runs `bun run version-packages` and opens or updates the "chore: Version packages" PR. That script is `changeset version` + `scripts/sync-version.mjs` (copies the version into `Cargo.toml` and refreshes `Cargo.lock`) + `bun install --lockfile-only`.
+   - `version` (changesets pending): `changesets/action/version` runs `bun run version-packages` and opens or updates the "chore: Version packages" PR. That script is `changeset version` + `scripts/sync-version.mjs` (patches the version into `Cargo.toml` and `Cargo.lock`) + `bun install --lockfile-only`.
    - `publish` (that PR was merged): the `build` matrix compiles `gozo` for linux/darwin/windows on x86_64 and aarch64, then `publish`:
      1. `scripts/package-native.mjs` turns the binaries into `gozo-<os>-<arch>` packages,
      2. `packages/gozo/bump-version.mjs` pins the launcher's `optionalDependencies`,

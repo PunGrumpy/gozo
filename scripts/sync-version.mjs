@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Copies packages/gozo/package.json's version (owned by changesets) into the
 // Cargo workspace so `gozo --version`, crates.io and npm always agree.
-import { execFileSync } from "node:child_process";
+//
+// Cargo.lock is patched directly instead of running `cargo update`, so this
+// works on a bare CI runner with no Rust toolchain or registry cache.
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -22,27 +24,53 @@ if (!SEMVER.test(version)) {
 }
 
 const cargoToml = path.join(root, "Cargo.toml");
-const before = readFileSync(cargoToml, "utf-8");
-const match = WORKSPACE_VERSION.exec(before);
+const toml = readFileSync(cargoToml, "utf-8");
+const match = WORKSPACE_VERSION.exec(toml);
 if (!match?.groups) {
   console.error(
     "sync-version: could not find [workspace.package] version in Cargo.toml"
   );
   process.exit(1);
 }
-if (match.groups.version === version) {
+const current = match.groups.version;
+if (current === version) {
   console.log(`sync-version: Cargo.toml already at ${version}`);
   process.exit(0);
 }
-
 writeFileSync(
   cargoToml,
-  before.replace(WORKSPACE_VERSION, `$<head>${version}$<tail>`)
+  toml.replace(WORKSPACE_VERSION, `$<head>${version}$<tail>`)
 );
-// Refresh Cargo.lock entries for the workspace members without touching dependencies.
-// oxlint-disable-next-line sonarjs/no-os-command-from-path -- cargo comes from the developer's toolchain
-execFileSync("cargo", ["update", "--workspace", "--offline"], {
-  cwd: root,
-  stdio: "inherit",
-});
-console.log(`sync-version: Cargo.toml -> ${version}`);
+
+// Workspace members are the [[package]] blocks without a `source` line
+// (registry and git dependencies always carry one). Bump only those.
+const cargoLock = path.join(root, "Cargo.lock");
+const lock = readFileSync(cargoLock, "utf-8");
+const blocks = lock.split("\n[[package]]\n");
+let bumped = 0;
+const patched = blocks
+  .map((block, index) => {
+    if (index === 0 || /^source = /mu.test(block)) {
+      return block;
+    }
+    const versionLine = new RegExp(
+      `^version = "${current.replaceAll(".", "\\.")}"$`,
+      "mu"
+    );
+    if (!versionLine.test(block)) {
+      return block;
+    }
+    bumped += 1;
+    return block.replace(versionLine, `version = "${version}"`);
+  })
+  .join("\n[[package]]\n");
+if (bumped === 0) {
+  console.error(
+    `sync-version: no workspace crates at ${current} found in Cargo.lock`
+  );
+  process.exit(1);
+}
+writeFileSync(cargoLock, patched);
+console.log(
+  `sync-version: Cargo.toml and ${bumped} Cargo.lock entries -> ${version}`
+);
