@@ -32,6 +32,7 @@
 
 /* the terminal well is the same dark surface everywhere, in both themes */
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --well: #0b1220;
   --well-fg: #e6edf3;
   --well-dim: #8b949e;
@@ -127,6 +128,24 @@ html > body[data-scroll-locked] {
 #nd-page figure.shiki button:hover {
   color: var(--well-fg);
   background: rgb(255 255 255 / 0.08);
+}
+/* hover is instant, press scales, nothing else animates */
+#nd-docs-layout button,
+#nd-docs-layout a {
+  transition: transform 160ms var(--ease-out);
+}
+#nd-docs-layout button:active {
+  transform: scale(0.97);
+}
+#nd-docs-layout :focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+@media (prefers-reduced-motion: reduce) {
+  #nd-docs-layout button,
+  #nd-docs-layout a {
+    transition: none;
+  }
 }
 code,
 kbd,
