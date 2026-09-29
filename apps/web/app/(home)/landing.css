@@ -2,9 +2,6 @@
   box-sizing: border-box;
 }
 .landing {
-  --well: #0b1220;
-  --well-fg: #e6edf3;
-  --well-dim: #8b949e;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --outline: rgb(0 0 0 / 0.1);
   --gutter: 32px;
@@ -18,7 +15,6 @@
   overflow-x: clip;
 }
 .dark .landing {
-  --well: var(--ds-gray-100);
   --outline: rgb(255 255 255 / 0.1);
 }
 .landing a {
@@ -123,23 +119,6 @@
   align-items: center;
   padding: 16px 0;
   font-size: 13px;
-}
-.landing header .k {
-  display: flex;
-  gap: 6px;
-  text-decoration: none;
-}
-.landing header .k span {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--ink);
-  font-size: 11px;
-}
-.landing header .k span.on {
-  background: var(--ink);
-  color: var(--paper);
 }
 .landing header .k span:nth-child(1) {
   --i: 0;
@@ -803,7 +782,6 @@
   --wm: calc(100cqw * 160 / 242 * 0.78);
   container-type: inline-size;
   padding: 120px 0 0;
-  overflow: clip;
 }
 .landing .page > footer .wire {
   bottom: var(--wm);
@@ -826,10 +804,9 @@
 .landing footer .wm {
   display: block;
   width: 100%;
-  aspect-ratio: 242 / 160;
+  height: var(--wm);
   background: var(--ink);
-  mask: url("/brand/wordmark-ink.svg") center / contain no-repeat;
-  transform: translateY(22%);
+  mask: url("/brand/wordmark-ink.svg") top / 100% auto no-repeat;
 }
 
 /* scroll-driven motion, all off the main thread: the wire is inked as its block crosses the middle of the viewport, blocks rise as they enter, the statement's words settle into place, and the header letters light up as you go */
