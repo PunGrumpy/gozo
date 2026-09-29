@@ -5,8 +5,8 @@ import { gitConfig } from "./shared";
 export const baseOptions = (): BaseLayoutProps => ({
   githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   links: [
-    { text: "docs", url: "/docs" },
-    { text: "brand", url: "/brand" },
+    { active: "none", text: "home", url: "/" },
+    { active: "none", text: "brand", url: "/brand" },
   ],
   nav: {
     title: (
