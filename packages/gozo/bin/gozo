@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Runs the `gozo-<os>-<arch>` binary, installing it on demand.
+// Runs the `gozo-cli-<os>-<arch>` binary, installing it on demand.
 // Adapted from the `turbo` launcher (vercel/turborepo, MIT).
 
 const childProcess = require("node:child_process");
@@ -14,7 +14,7 @@ const ARCHS = ["64", "arm64"];
 
 function binaryPath(platform, arch) {
   const ext = platform === "windows" ? ".exe" : "";
-  return `gozo-${platform}-${arch}/bin/gozo${ext}`;
+  return `gozo-cli-${platform}-${arch}/bin/gozo${ext}`;
 }
 
 function tryResolve(candidate) {

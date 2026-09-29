@@ -9,11 +9,11 @@ const file = path.join(import.meta.dirname, "package.json");
 const pkg = JSON.parse(readFileSync(file, "utf-8"));
 
 const platformPackages = [
-  "gozo-darwin-64",
-  "gozo-darwin-arm64",
-  "gozo-linux-64",
-  "gozo-linux-arm64",
-  "gozo-windows-64",
+  "gozo-cli-darwin-64",
+  "gozo-cli-darwin-arm64",
+  "gozo-cli-linux-64",
+  "gozo-cli-linux-arm64",
+  "gozo-cli-windows-64",
 ];
 
 pkg.optionalDependencies = Object.fromEntries(
