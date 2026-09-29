@@ -18,7 +18,7 @@ gozo is a developer CLI for Go projects, written in Rust. One native binary wrap
 
 <p>
   <a href="https://github.com/PunGrumpy/gozo/releases/latest"><img alt="gozo release" src="https://img.shields.io/github/v/release/PunGrumpy/gozo.svg?style=for-the-badge&amp;labelColor=000000&amp;label=release" height="28"></a>
-  <a href="https://www.npmjs.com/package/gozo"><img alt="npm" src="https://img.shields.io/npm/v/gozo.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
+  <a href="https://www.npmjs.com/package/gozo-cli"><img alt="npm" src="https://img.shields.io/npm/v/gozo-cli.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
   <a href="https://github.com/PunGrumpy/gozo/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/PunGrumpy/gozo.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
 </p>
 
@@ -28,7 +28,7 @@ gozo is a developer CLI for Go projects, written in Rust. One native binary wrap
 curl -fsSL https://raw.githubusercontent.com/PunGrumpy/gozo/main/install.sh | sh
 ```
 
-You can also run `npm i -g gozo`, `bun add -g gozo` or `cargo install gozo`.
+You can also run `npm i -g gozo-cli`, `bun add -g gozo-cli` or `cargo install gozo`.
 
 ## Get started
 

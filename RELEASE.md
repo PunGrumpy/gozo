@@ -1,6 +1,6 @@
 # Release documentation
 
-gozo is versioned with [changesets](https://changesets.dev). It ships the same way as `turbo`: the `gozo` launcher on npm, one `gozo-<os>-<arch>` package per platform, a GitHub release with tarballs, and `cargo install gozo` from source.
+gozo is versioned with [changesets](https://changesets.dev). It ships the same way as `turbo`: the `gozo-cli` launcher on npm, one `gozo-cli-<os>-<arch>` package per platform, a GitHub release with tarballs, and `cargo install gozo` from source.
 
 The automation follows the [changesets automation guide](https://changesets.dev/guide/automating#how-do-i-run-the-version-and-publish-commands), using the `changesets/action@v2` sub-actions and npm trusted publishing.
 
@@ -12,9 +12,9 @@ The automation follows the [changesets automation guide](https://changesets.dev/
    - `publish`, after that PR merged: the `build` matrix compiles `gozo` for linux, darwin and windows on x86_64 and aarch64, then the `publish` job runs
    - `none`: nothing to do
 3. The `publish` job takes four steps:
-   1. `scripts/package-native.mjs` turns the binaries into `gozo-<os>-<arch>` packages
+   1. `scripts/package-native.mjs` turns the binaries into `gozo-cli-<os>-<arch>` packages
    2. `packages/gozo/bump-version.mjs` pins the launcher’s `optionalDependencies`
-   3. `changesets/action/publish` runs `bun run changeset:publish`: `scripts/publish-native.mjs` publishes the platform packages, then `changeset publish` publishes `gozo`, pushes the `gozo@<version>` tag and creates the GitHub release with the changelog
+   3. `changesets/action/publish` runs `bun run changeset:publish`: `scripts/publish-native.mjs` publishes the platform packages, then `changeset publish` publishes `gozo-cli`, pushes the `gozo-cli@<version>` tag and creates the GitHub release with the changelog
    4. `gh release upload` attaches `gozo-<os>-<arch>.tar.gz` and `.sha256` to that release, which `install.sh` and `gozo update` download
 
 ## Manual dry run
@@ -28,5 +28,5 @@ Run the **Release** workflow from the Actions tab with `dry_run` checked. It bui
 ## One-time setup
 
 - In the repository settings under Actions, enable “Allow GitHub Actions to create and approve pull requests”
-- On npm, configure [trusted publishing](https://docs.npmjs.com/trusted-publishers) for `gozo` and each `gozo-<os>-<arch>` package, pointing at `.github/workflows/release.yml`. If a package cannot use trusted publishing, write `NPM_TOKEN` into `~/.npmrc` in the publish job. The job upgrades npm to 11.5 or newer, which trusted publishing requires
+- On npm, configure [trusted publishing](https://docs.npmjs.com/trusted-publishers) for `gozo-cli` and each `gozo-cli-<os>-<arch>` package, pointing at `.github/workflows/release.yml`. If a package cannot use trusted publishing, write `NPM_TOKEN` into `~/.npmrc` in the publish job. The job upgrades npm to 11.5 or newer, which trusted publishing requires
 - Optionally install the [changeset bot](https://github.com/apps/changeset-bot)
