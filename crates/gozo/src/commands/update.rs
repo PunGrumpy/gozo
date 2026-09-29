@@ -45,8 +45,8 @@ struct Release {
 pub fn run(ctx: &mut Ctx, args: Args) -> anyhow::Result<ExitCode> {
     let want = args.version.as_deref().map(strip_v);
     let url = match want {
-        // `changeset publish` tags releases `gozo@<version>`.
-        Some(v) => format!("https://api.github.com/repos/{REPO}/releases/tags/gozo@{v}"),
+        // `changeset publish` tags releases `gozo-cli@<version>`.
+        Some(v) => format!("https://api.github.com/repos/{REPO}/releases/tags/gozo-cli@{v}"),
         None => format!("https://api.github.com/repos/{REPO}/releases/latest"),
     };
     ctx.ui.debug(format!("GET {url}"));
@@ -277,10 +277,10 @@ fn asset_name_for(os: &str, arch: &str) -> Option<String> {
     Some(format!("gozo-{os}-{arch}.tar.gz"))
 }
 
-/// `gozo@1.2.3`, `v1.2.3` and `1.2.3` all become `1.2.3`.
+/// `gozo-cli@1.2.3`, `v1.2.3` and `1.2.3` all become `1.2.3`.
 fn strip_v(v: &str) -> &str {
     let v = v.trim();
-    let v = v.strip_prefix("gozo@").unwrap_or(v);
+    let v = v.strip_prefix("gozo-cli@").unwrap_or(v);
     v.trim_start_matches(['v', 'V'])
 }
 
@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn strips_tag_prefixes() {
-        assert_eq!(strip_v("gozo@1.2.3"), "1.2.3");
+        assert_eq!(strip_v("gozo-cli@1.2.3"), "1.2.3");
         assert_eq!(strip_v("v1.2.3"), "1.2.3");
         assert_eq!(strip_v(" 1.2.3 "), "1.2.3");
     }

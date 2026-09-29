@@ -3,7 +3,7 @@
 #
 # Environment:
 #   GOZO_INSTALL   directory to install into (default: ~/.gozo/bin)
-#   GOZO_VERSION   version tag to install, e.g. v0.2.0 (default: latest)
+#   GOZO_VERSION   version tag to install, e.g. gozo-cli@0.2.0 (default: latest)
 set -eu
 
 repo="PunGrumpy/gozo"
