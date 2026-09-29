@@ -15,6 +15,7 @@
 | Format Rust | `bun run fix:rust` (`cargo fmt --all`) |
 | Lint + format JS | `bun run check` / `bun run fix` (ultracite) |
 | Try against a Go project | `./target/debug/gozo -C path/to/project doctor` |
+| Try the npm launcher | `./packages/gozo/bin/gozo --help` (uses `target/release` or `target/debug` in a checkout; `GOZO_BINARY_PATH` overrides) |
 
 ## Repository layout
 

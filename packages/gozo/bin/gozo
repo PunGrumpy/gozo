@@ -32,7 +32,8 @@ function tryResolve(candidate) {
 }
 
 function installUsingNPM() {
-  const pkgDir = path.dirname(require.resolve("gozo/package.json"));
+  // This file lives at <package>/bin/gozo; install into the package itself.
+  const pkgDir = path.join(__dirname, "..");
   // Erase npm_config_global so a nested install inside a global install works.
   const env = { ...process.env, npm_config_global: undefined };
   childProcess.execSync(
@@ -62,6 +63,25 @@ function repairInstructions(pm) {
   }
 }
 
+// In a source checkout (packages/gozo inside the gozo repo), prefer a locally
+// built binary so `./packages/gozo/bin/gozo` works without a published package.
+function sourceCheckoutBinary() {
+  const repoRoot = path.join(__dirname, "..", "..", "..");
+  if (!fs.existsSync(path.join(repoRoot, "Cargo.toml"))) {
+    return null;
+  }
+  const ext = process.platform === "win32" ? ".exe" : "";
+  for (const profile of ["release", "debug"]) {
+    const candidate = path.join(repoRoot, "target", profile, `gozo${ext}`);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  console.error("gozo: running from a source checkout but no binary was found in target/.");
+  console.error("Build one with `cargo build -p gozo`, or set GOZO_BINARY_PATH.");
+  process.exit(1);
+}
+
 function getBinaryPath() {
   const override = process.env.GOZO_BINARY_PATH;
   if (override) {
@@ -71,6 +91,11 @@ function getBinaryPath() {
       process.exit(1);
     }
     return override;
+  }
+
+  const local = sourceCheckoutBinary();
+  if (local) {
+    return local;
   }
 
   let { platform, arch } = process;
