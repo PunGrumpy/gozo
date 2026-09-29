@@ -10,15 +10,14 @@ export const baseOptions = (): BaseLayoutProps => ({
   ],
   nav: {
     title: (
-      <span className="flex items-center gap-2">
-        <img
-          alt=""
-          height={22}
-          src="/brand/symbol-ink.svg"
-          width={22}
-          className="dark:invert"
-        />
-        <span className="font-serif text-2xl tracking-[-0.02em]">gozo</span>
+      <span className="k">
+        <span aria-hidden="true" className="on">
+          g
+        </span>
+        <span aria-hidden="true">o</span>
+        <span aria-hidden="true">z</span>
+        <span aria-hidden="true">o</span>
+        <span className="sr-only">gozo</span>
       </span>
     ),
   },

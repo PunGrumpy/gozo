@@ -30,6 +30,38 @@
   --color-fd-ring: var(--ds-blue-700);
 }
 
+/* the terminal well is the same dark surface everywhere, in both themes */
+:root {
+  --well: #0b1220;
+  --well-fg: #e6edf3;
+  --well-dim: #8b949e;
+}
+.dark {
+  --well: var(--ds-gray-100);
+}
+
+/* the four letter boxes used as the mark in every header */
+.k {
+  display: inline-flex;
+  gap: 6px;
+  text-decoration: none;
+}
+.k span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-ligatures: none;
+  color: var(--ink);
+}
+.k span.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
 html {
   scrollbar-gutter: stable;
   background: var(--color-fd-background);
@@ -41,20 +73,60 @@ html > body[data-scroll-locked] {
   --removed-body-scroll-bar-size: 0px !important;
 }
 
-/* docs typography: serif headings, tabular mono, no ligatures */
-.prose h1,
+/* docs: same voice as the landing. serif titles, mono labels, terminal-style code */
+#nd-page h1 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 2.75rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+#nd-page h1 + p {
+  color: var(--ash);
+}
 .prose h2,
 .prose h3 {
   font-family: var(--font-serif);
   font-weight: 400;
   letter-spacing: -0.02em;
 }
-.prose h1 {
-  font-size: 2.75rem;
-  line-height: 1;
-}
 .prose h2 {
   font-size: 1.75rem;
+}
+#nd-sidebar,
+#nd-toc {
+  text-transform: lowercase;
+}
+#nd-sidebar a[data-active],
+#nd-toc a,
+#toc-title,
+#nd-sidebar p {
+  font-size: 13px;
+}
+#toc-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+#toc-title svg {
+  display: none;
+}
+#nd-page figure.shiki {
+  background: var(--well);
+  color: var(--well-fg);
+  border: 0;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+#nd-page figure.shiki code span {
+  color: var(--shiki-dark, inherit);
+}
+#nd-page figure.shiki button {
+  color: var(--well-dim);
+}
+#nd-page figure.shiki button:hover {
+  color: var(--well-fg);
+  background: rgb(255 255 255 / 0.08);
 }
 code,
 kbd,
