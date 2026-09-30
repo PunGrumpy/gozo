@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 export const Term = ({ children }: { children: ReactNode }) => (
-  <div className="dark text-gray-1000 relative isolate mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl bg-gray-100 shadow-[inset_0_0_0_1px_var(--ds-gray-alpha-200)] after:pointer-events-none after:absolute after:inset-0 after:bg-[url(/grain.svg)] after:bg-size-[200px] after:opacity-8 after:mix-blend-overlay">
+  <div className="border-gray-alpha-400 text-gray-1000 relative isolate mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border bg-gray-100 after:pointer-events-none after:absolute after:inset-0 after:bg-[url(/grain.svg)] after:bg-size-[200px] after:opacity-8 after:mix-blend-overlay">
     <pre className="overflow-x-auto px-7.5 py-6.5 font-mono text-sm leading-[1.75] whitespace-pre normal-case [&_b]:font-semibold">
       {children}
     </pre>
@@ -25,25 +27,27 @@ export const Prompt = ({ children }: { children: ReactNode }) => (
   </>
 );
 
-const marks = {
-  fail: { className: "text-red-900", glyph: "✗" },
-  ok: { className: "text-green-900", glyph: "✓" },
-  step: { className: "text-gray-900", glyph: ">" },
-  warn: { className: "text-amber-900", glyph: "!" },
-} as const;
+const glyphs = { fail: "✗", ok: "✓", step: ">", warn: "!" } as const;
 
 export const Line = ({
   children,
   mark,
 }: {
   children: ReactNode;
-  mark: keyof typeof marks;
-}) => {
-  const { className, glyph } = marks[mark];
-  return (
-    <>
-      <span className={className}>{glyph}</span> {children}
-      {"\n"}
-    </>
-  );
-};
+  mark: keyof typeof glyphs;
+}) => (
+  <>
+    <span
+      className={cn(
+        mark === "fail" && "text-red-900",
+        mark === "ok" && "text-green-900",
+        mark === "step" && "text-gray-900",
+        mark === "warn" && "text-amber-900"
+      )}
+    >
+      {glyphs[mark]}
+    </span>{" "}
+    {children}
+    {"\n"}
+  </>
+);

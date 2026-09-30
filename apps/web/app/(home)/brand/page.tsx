@@ -11,7 +11,6 @@ import {
   SiteHeader,
 } from "@/components/site";
 import { More, Scene, Title } from "@/components/ui";
-import { button } from "@/lib/button";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -109,13 +108,25 @@ const scenes = [
   },
 ];
 
-const card = "rounded-2xl border border-gray-400 bg-background-200 p-6";
-
-/* lockup cards show the files on their own background, whatever the page theme */
-const tone = {
-  ink: "light border-gray-1000 bg-gray-1000 text-background-100",
-  paper: "light bg-background-100 text-gray-1000",
-};
+/* every card on the page shares the surface; className adds layout and padding */
+const Card = ({
+  as: Tag = "div",
+  children,
+  className,
+}: {
+  as?: "div" | "ul";
+  children: ReactNode;
+  className?: string;
+}) => (
+  <Tag
+    className={cn(
+      "bg-background-200 rounded-2xl border border-gray-400",
+      className
+    )}
+  >
+    {children}
+  </Tag>
+);
 
 const Asset = ({
   alt,
@@ -132,9 +143,17 @@ const Asset = ({
   height?: number;
   label: ReactNode;
   preview?: boolean;
-  toneName: keyof typeof tone;
+  toneName: "ink" | "paper";
 }) => (
-  <div className={cn(card, tone[toneName], "flex flex-col gap-4")}>
+  <div
+    className={cn(
+      "flex flex-col gap-4 rounded-2xl border p-6",
+      /* lockup cards show the files on their own background, whatever the page theme */
+      toneName === "ink"
+        ? "light border-gray-1000 bg-gray-1000 text-background-100 dark:border-white/15"
+        : "light bg-background-100 text-gray-1000 border-gray-400"
+    )}
+  >
     <div className="grid min-h-40 flex-1 place-items-center">
       <img
         alt={alt}
@@ -167,7 +186,7 @@ const Swatch = ({
   name: string;
   use: string;
 }) => (
-  <div className={cn(card, "p-2")}>
+  <Card className="p-2">
     <div className="light">
       <div
         className={cn(
@@ -179,32 +198,59 @@ const Swatch = ({
     </div>
     <div className="flex flex-col gap-0.5 px-2 pt-3 pb-1.5 font-mono text-[13px]">
       <b className="font-medium">{name}</b>
-      <span className="text-[11px] text-gray-900">
+      <span className="text-xs text-gray-900">
         {hex} · {use}
       </span>
     </div>
-  </div>
+  </Card>
 );
 
-const grid = "ml-(--gutter) grid gap-4";
-
 const BrandPage = () => (
-  <div className="relative mx-auto max-w-[1280px] px-5 md:px-10">
+  <div className="relative mx-auto max-w-[1280px] px-6 sm:px-8 md:px-10">
     <SiteHeader />
 
     <section className="relative pt-30 pb-32">
-      <h1 className="text-display -ml-[0.04em] font-serif font-normal">
+      <h1
+        className={cn(
+          "text-display -ml-[0.04em] font-serif font-normal",
+          "transition-[opacity,translate] duration-500 ease-out starting:opacity-0 motion-safe:starting:translate-y-3"
+        )}
+      >
         brand.
       </h1>
-      <p className="mt-7 max-w-[448px] text-[17px] text-gray-900">
+      <p
+        className={cn(
+          "mt-7 max-w-[448px] text-[17px] text-gray-900",
+          "transition-[opacity,translate] delay-60 duration-500 ease-out starting:opacity-0 motion-safe:starting:translate-y-3"
+        )}
+      >
         logos, type, colour and a few scenes. grab what you need, do not alter
         the files.
       </p>
-      <div className="mt-7 flex flex-wrap gap-2.5">
-        <a className={button()} href={`${REPO}/tree/main/brand`}>
+      <div
+        className={cn(
+          "mt-7 flex flex-wrap gap-2.5",
+          "transition-[opacity,translate] delay-120 duration-500 ease-out starting:opacity-0 motion-safe:starting:translate-y-3"
+        )}
+      >
+        <a
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium whitespace-nowrap transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
+            "h-10 px-5 text-sm",
+            "bg-gray-1000 text-background-100 hover:bg-gray-1000/85 border-transparent"
+          )}
+          href={`${REPO}/tree/main/brand`}
+        >
           download all assets
         </a>
-        <Link className={button({ ghost: true })} href="/">
+        <Link
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium whitespace-nowrap transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
+            "h-10 px-5 text-sm",
+            "border-gray-alpha-400 text-gray-1000 hover:bg-gray-alpha-100 bg-transparent"
+          )}
+          href="/"
+        >
           back home
         </Link>
       </div>
@@ -221,20 +267,20 @@ const BrandPage = () => (
       title="gozo. lowercase, always."
       x="c"
     >
-      <div className={cn(card, tone.paper, "grid min-h-70 place-items-center")}>
+      <Card className="grid min-h-70 place-items-center p-6">
         <div
           aria-hidden="true"
           className="aspect-[242/160] w-3/5 bg-current mask-[url(/brand/wordmark-ink.svg)] mask-contain mask-center mask-no-repeat"
         />
         <span className="sr-only">gozo</span>
-      </div>
+      </Card>
     </Feature>
 
     <Block from="c" glyph="◆" x="l">
       <Title className="mb-8 ml-(--gutter)">
         wordmark for recognition, symbol when tight.
       </Title>
-      <div className={cn(grid, "md:grid-cols-2")}>
+      <div className="ml-(--gutter) grid gap-4 md:grid-cols-2">
         {lockups.map((l) => (
           <Asset
             alt={`gozo ${l.name}`}
@@ -289,7 +335,7 @@ const BrandPage = () => (
       title="three faces, three jobs."
       x="c"
     >
-      <div className={cn(card, "grid gap-6 p-8")}>
+      <Card className="grid gap-6 p-8">
         <span className="font-serif text-[clamp(40px,4vw,56px)] leading-none tracking-[-0.025em]">
           the joy of go, handled.
         </span>
@@ -302,16 +348,14 @@ const BrandPage = () => (
           <span className="text-gray-900">$</span> gozo deploy --prod{" "}
           <span className="text-gray-900">[42s]</span>
         </span>
-      </div>
+      </Card>
     </Feature>
 
     <Block from="c" glyph="◆" x="l">
       <Title className="mb-8 ml-(--gutter)">
         geist tokens for the interface. the scenes bring the rest.
       </Title>
-      <div
-        className={cn(grid, "grid-cols-[repeat(auto-fill,minmax(180px,1fr))]")}
-      >
+      <div className="ml-(--gutter) grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
         {tokens.map((t) => (
           <Swatch key={t.name} {...t} />
         ))}
@@ -332,7 +376,7 @@ const BrandPage = () => (
       title="say what happened, then stop."
       x="c"
     >
-      <ul className={cn(card, "px-6 py-2")}>
+      <Card as="ul" className="px-6 py-2">
         {voice.map((v) => (
           <li
             className="border-b border-gray-400 py-3.5 last:border-b-0"
@@ -344,12 +388,12 @@ const BrandPage = () => (
             </span>
           </li>
         ))}
-      </ul>
+      </Card>
     </Feature>
 
     <Block from="c" glyph="◆" x="l">
       <Title className="mb-8 ml-(--gutter)">scenes.</Title>
-      <div className={cn(grid, "md:grid-cols-2")}>
+      <div className="ml-(--gutter) grid gap-4 md:grid-cols-2">
         {scenes.map((s) => (
           <Scene
             alt={s.alt}

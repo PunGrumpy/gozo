@@ -11,7 +11,7 @@ import {
 } from "@/components/site";
 import { Dim, Line, Prompt, Term, True, Url } from "@/components/term";
 import { Scene } from "@/components/ui";
-import { button } from "@/lib/button";
+import { cn } from "@/lib/utils";
 
 const INSTALL = "npm i -g gozo";
 
@@ -21,55 +21,55 @@ const stats = [
   { label: "runtime dependencies", value: "0" },
 ];
 
-/* where each word of the statement starts before it settles, cycling every four words */
-const scatter = [
-  [-40, 18],
-  [28, -14],
-  [72, 10],
-  [-16, -24],
-];
-
-const words = (text: string, offset = 0) =>
-  text.split(" ").map((word, i) => {
-    const [dx, dy] = scatter[(offset + i) % scatter.length];
-    return (
-      <span
-        className="scroll-motion:settle inline-block whitespace-pre"
-        key={word}
-        style={{ "--dx": `${dx}px`, "--dy": `${dy}px` }}
-      >
-        {word}{" "}
-      </span>
-    );
-  });
-
-const enter =
-  "transition-[opacity,translate] duration-600 ease-out starting:translate-y-3 starting:opacity-0 motion-reduce:transition-none";
-
 const HomePage = () => (
-  <div className="relative mx-auto max-w-[1280px] px-5 md:px-10">
+  <div className="relative mx-auto max-w-[1280px] px-6 sm:px-8 md:px-10">
     <SiteHeader />
 
     <section className="md:min-h-[190svh]">
       <div className="relative flex min-h-[88svh] flex-col justify-end pb-26 md:sticky md:top-0 md:min-h-svh">
         <Kit />
         <h1
-          className={`text-display -ml-[0.04em] max-w-[14ch] font-serif font-normal ${enter}`}
+          className={cn(
+            "text-display -ml-[0.04em] max-w-[14ch] font-serif font-normal",
+            "transition-[opacity,translate] duration-500 ease-out starting:opacity-0 motion-safe:starting:translate-y-3"
+          )}
         >
           the joy of go, handled.
         </h1>
         <p
-          className={`mt-7 max-w-[448px] text-[17px] text-gray-900 delay-80 ${enter}`}
+          className={cn(
+            "mt-7 max-w-[448px] text-[17px] text-gray-900",
+            "transition-[opacity,translate] delay-60 duration-500 ease-out starting:opacity-0 motion-safe:starting:translate-y-3"
+          )}
         >
           gozo is one binary that gives go projects the workflow of vercel cli.
           run it in any repo and it knows the module, the workspace, the
           toolchain and where you deploy.
         </p>
-        <div className={`mt-7 flex flex-wrap gap-2.5 delay-160 ${enter}`}>
-          <a className={button()} href="#install">
+        <div
+          className={cn(
+            "mt-7 flex flex-wrap gap-2.5",
+            "transition-[opacity,translate] delay-120 duration-500 ease-out starting:opacity-0 motion-safe:starting:translate-y-3"
+          )}
+        >
+          <a
+            className={cn(
+              "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium whitespace-nowrap transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
+              "h-10 px-5 text-sm",
+              "bg-gray-1000 text-background-100 hover:bg-gray-1000/85 border-transparent"
+            )}
+            href="#install"
+          >
             install gozo
           </a>
-          <Link className={button({ ghost: true })} href="/docs">
+          <Link
+            className={cn(
+              "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium whitespace-nowrap transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
+              "h-10 px-5 text-sm",
+              "border-gray-alpha-400 text-gray-1000 hover:bg-gray-alpha-100 bg-transparent"
+            )}
+            href="/docs"
+          >
             read the docs
           </Link>
         </div>
@@ -241,22 +241,13 @@ const HomePage = () => (
       />
     </Block>
 
-    <Block className="[view-timeline-name:--statement]" x="l">
+    <Block x="l">
       <p className="max-w-[26ch] pl-(--gutter) text-[clamp(28px,3.4vw,43px)] leading-[1.05] tracking-[-0.01em]">
-        <span className="block">
-          {words("you don't need a platform team.")}
-        </span>
-        <span className="block">{words("you don't need a makefile.")}</span>
-        <span className="block">
-          {words("just")}
-          <span
-            className="scroll-motion:settle inline-block font-serif whitespace-pre italic"
-            style={{ "--dx": "28px", "--dy": "-14px" }}
-          >
-            gozo deploy{" "}
-          </span>
-          {words("and go home.", 2)}
-        </span>
+        you don&apos;t need a platform team.
+        <br />
+        you don&apos;t need a makefile.
+        <br />
+        just <span className="font-serif italic">gozo deploy</span> and go home.
       </p>
     </Block>
 
