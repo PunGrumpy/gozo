@@ -977,8 +977,8 @@
   .landing .jog b,
   .landing [data-reveal] > :not(i),
   .landing .statement .w,
-  .landing .piece,
-  .landing .piece figcaption,
+  .landing .piece[data-id],
+  .landing .piece[data-id] figcaption,
   .landing header .k span {
     animation: none;
   }
@@ -1038,8 +1038,8 @@
   .landing .kit {
     max-height: none;
   }
-  .landing .piece,
-  .landing .piece figcaption {
+  .landing .piece[data-id],
+  .landing .piece[data-id] figcaption {
     animation: none;
   }
   .landing .scene img {
