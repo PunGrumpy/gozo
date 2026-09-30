@@ -1,6 +1,7 @@
 /* gozo colour tokens. Names and scale follow Geist: 100-300 component backgrounds,
-   400-600 borders, 700-800 high-contrast backgrounds, 900-1000 text. A .light or .dark
-   class on any element re-themes that subtree. */
+   400-600 borders, 700-800 high-contrast backgrounds, 900-1000 text. Both themes lean on
+   the ink hue (222) so dark mode is ink with paper text, not neutral black. A .light or
+   .dark class on any element re-themes that subtree. */
 :root,
 .light {
   --ds-background-100: hsl(240 20% 99%);
@@ -81,18 +82,18 @@
   color-scheme: light;
 }
 .dark {
-  --ds-background-100: hsl(240 8% 4%);
-  --ds-background-200: hsl(240 8% 2%);
-  --ds-gray-100: hsl(222 10% 10%);
-  --ds-gray-200: hsl(222 10% 12%);
-  --ds-gray-300: hsl(222 10% 16%);
-  --ds-gray-400: hsl(222 10% 18%);
-  --ds-gray-500: hsl(222 6% 27%);
-  --ds-gray-600: hsl(222 6% 53%);
-  --ds-gray-700: hsl(222 6% 56%);
-  --ds-gray-800: hsl(222 6% 49%);
-  --ds-gray-900: hsl(222 12% 63%);
-  --ds-gray-1000: hsl(222 12% 93%);
+  --ds-background-100: hsl(222 24% 7%);
+  --ds-background-200: hsl(222 26% 5%);
+  --ds-gray-100: hsl(222 18% 11%);
+  --ds-gray-200: hsl(222 16% 13%);
+  --ds-gray-300: hsl(222 15% 16%);
+  --ds-gray-400: hsl(222 14% 19%);
+  --ds-gray-500: hsl(222 12% 26%);
+  --ds-gray-600: hsl(222 10% 42%);
+  --ds-gray-700: hsl(222 9% 55%);
+  --ds-gray-800: hsl(222 9% 48%);
+  --ds-gray-900: hsl(222 14% 70%);
+  --ds-gray-1000: hsl(240 20% 96%);
   --ds-teal-100: hsl(169 78% 7%);
   --ds-teal-200: hsl(170 74% 9%);
   --ds-teal-300: hsl(171 75% 13%);
@@ -143,16 +144,16 @@
   --ds-blue-800: hsl(212 100% 41%);
   --ds-blue-900: hsl(210 100% 66%);
   --ds-blue-1000: hsl(206 100% 96%);
-  --ds-gray-alpha-100: rgb(237 237 237 / 0.05);
-  --ds-gray-alpha-200: rgb(237 237 237 / 0.08);
-  --ds-gray-alpha-300: rgb(237 237 237 / 0.1);
-  --ds-gray-alpha-400: rgb(237 237 237 / 0.12);
-  --ds-gray-alpha-500: rgb(237 237 237 / 0.21);
-  --ds-gray-alpha-600: rgb(237 237 237 / 0.34);
-  --ds-gray-alpha-700: rgb(237 237 237 / 0.44);
-  --ds-gray-alpha-800: rgb(237 237 237 / 0.51);
-  --ds-gray-alpha-900: rgb(237 237 237 / 0.7);
-  --ds-gray-alpha-1000: rgb(237 237 237 / 0.93);
+  --ds-gray-alpha-100: rgb(214 222 240 / 0.05);
+  --ds-gray-alpha-200: rgb(214 222 240 / 0.08);
+  --ds-gray-alpha-300: rgb(214 222 240 / 0.1);
+  --ds-gray-alpha-400: rgb(214 222 240 / 0.12);
+  --ds-gray-alpha-500: rgb(214 222 240 / 0.21);
+  --ds-gray-alpha-600: rgb(214 222 240 / 0.34);
+  --ds-gray-alpha-700: rgb(214 222 240 / 0.44);
+  --ds-gray-alpha-800: rgb(214 222 240 / 0.51);
+  --ds-gray-alpha-900: rgb(214 222 240 / 0.7);
+  --ds-gray-alpha-1000: rgb(214 222 240 / 0.93);
   --ds-focus-color: var(--ds-blue-700);
   --ds-focus-ring:
     0 0 0 2px var(--ds-background-100), 0 0 0 4px var(--ds-focus-color);
