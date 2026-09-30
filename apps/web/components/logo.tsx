@@ -5,6 +5,8 @@ import { BookOpen, Check, Image, Sprout, Type } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { cn } from "@/lib/utils";
+
 import { Lockup } from "./lockup";
 
 const assets = [
@@ -58,7 +60,13 @@ export const Logo = () => {
       </ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Positioner className="z-50 outline-hidden">
-          <ContextMenu.Popup className="border-gray-alpha-400 bg-background-100 text-gray-1000 shadow-gray-alpha-200 min-w-60 origin-(--transform-origin) rounded-xl border p-1 font-sans lowercase shadow-lg outline-hidden transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-96 data-ending-style:opacity-0 data-ending-style:duration-100 data-starting-style:scale-96 data-starting-style:opacity-0 motion-reduce:transition-none">
+          <ContextMenu.Popup
+            className={cn(
+              "border-gray-alpha-400 text-gray-1000 min-w-60 origin-(--transform-origin) rounded-xl border p-1 font-sans lowercase outline-hidden transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-96 data-ending-style:opacity-0 data-ending-style:duration-100 data-starting-style:scale-96 data-starting-style:opacity-0 motion-reduce:transition-none",
+              /* elevation: a black shadow in both themes, and in dark a surface one step lighter than the page, since a shadow barely reads on a dark page */
+              "bg-background-100 shadow-lg shadow-black/8 dark:bg-gray-100 dark:shadow-black/40"
+            )}
+          >
             {assets.map((asset) => {
               const Icon = copied === asset.id ? Check : asset.icon;
               return (
