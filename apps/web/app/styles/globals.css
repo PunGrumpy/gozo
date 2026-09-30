@@ -103,6 +103,19 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+/* Fumadocs motion: search opens from ⌘K many times a day, so it appears with no animation.
+   Popovers and the mobile drawer use the site's curves; exits are quicker than entrances. */
+@theme {
+  --animate-fd-dialog-in: none;
+  --animate-fd-dialog-out: none;
+  --animate-fd-fade-in: none;
+  --animate-fd-fade-out: none;
+  --animate-fd-popover-in: fd-popover-in 150ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-fd-popover-out: fd-popover-out 100ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-fd-sidebar-in: fd-sidebar-in 300ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-fd-sidebar-out: fd-sidebar-out 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 /* Fumadocs reads its own colour names; point them at the Geist tokens in every theme scope */
 :root,
 .light,
