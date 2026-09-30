@@ -39,12 +39,17 @@ All three are open source (SIL OFL). Instrument Serif is on Google Fonts; Geist 
 
 ## Colour
 
-| Name  | Hex       | Use                                            |
-| ----- | --------- | ---------------------------------------------- |
-| Ink   | `#101828` | text, wordmark, primary buttons, terminal well |
-| Paper | `#FCFCFD` | backgrounds                                    |
-| Ash   | `#667085` | secondary text                                 |
-| Line  | `#E4E7EC` | borders and dividers                           |
+The interface uses Geist's token names and scale, defined in `tokens.css`. Steps 100 to 300 are component backgrounds, 400 to 600 borders, 700 and 800 high-contrast backgrounds, 900 and 1000 text. Every token has a light and a dark value.
+
+| Token            | Light     | Use                   |
+| ---------------- | --------- | --------------------- |
+| `gray-1000`      | `#11151C` | text, primary buttons |
+| `background-100` | `#FCFCFD` | page background       |
+| `background-200` | `#F6F6F8` | cards                 |
+| `gray-900`       | `#3A455F` | secondary text        |
+| `gray-400`       | `#E8E9ED` | borders and dividers  |
+
+The logo files keep their own ink `#101828` and paper `#FCFCFD`, so they read the same outside the site.
 
 There is no accent colour. Colour belongs to the terminal: green for `✓`, yellow for `!`, red for `✗`, dim for secondary lines, cyan for links. gozo uses the ANSI palette so it matches whatever theme the user already has.
 
