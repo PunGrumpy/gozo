@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { button } from "@/lib/button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 import { Mark } from "./mark";
 import { More, Points, Title } from "./ui";

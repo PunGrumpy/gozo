@@ -12,7 +12,7 @@ import {
 } from "@/components/site";
 import { More, Scene, Title } from "@/components/ui";
 import { button } from "@/lib/button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   description: "gozo logos, type, colour and scenes. grab what you need.",

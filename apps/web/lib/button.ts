@@ -1,4 +1,4 @@
-import { cn } from "./cn";
+import { cn } from "./utils";
 
 /* one pill for every call to action: hover changes colour instantly, a press scales */
 export const button = ({

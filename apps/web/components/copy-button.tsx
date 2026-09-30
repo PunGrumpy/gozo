@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { button } from "@/lib/button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 const RESET_MS = 1600;
 
