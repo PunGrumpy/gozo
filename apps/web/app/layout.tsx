@@ -1,19 +1,9 @@
 import "./styles/globals.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-});
-const instrumentSerif = Instrument_Serif({
-  style: ["normal", "italic"],
-  subsets: ["latin"],
-  variable: "--font-instrument-serif",
-  weight: "400",
-});
+import { fonts } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   description:
@@ -31,9 +21,13 @@ export const viewport: Viewport = {
 
 const Layout = ({ children }: LayoutProps<"/">) => (
   <html
-    className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-background-100 [scrollbar-gutter:stable] font-sans antialiased`}
+    className={cn(
+      fonts,
+      "bg-background-100 scrollbar-gutter-stable scroll-smooth"
+    )}
     lang="en"
     suppressHydrationWarning
+    data-scroll-behavior="smooth"
   >
     <body className="flex min-h-screen flex-col">
       <RootProvider>{children}</RootProvider>

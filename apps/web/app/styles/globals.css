@@ -88,9 +88,9 @@
   --color-blue-900: var(--ds-blue-900);
   --color-blue-1000: var(--ds-blue-1000);
 
-  --font-sans: var(--font-geist), system-ui, sans-serif;
-  --font-serif: var(--font-instrument-serif), Georgia, serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-serif: var(--font-serif), Georgia, serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
   --font-mono--font-feature-settings: "liga" 0, "calt" 0, "tnum" 1;
 
   --text-display: clamp(4rem, 8.6vw, 6.875rem);

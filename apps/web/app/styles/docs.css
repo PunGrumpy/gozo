@@ -1,6 +1,6 @@
 /* Fumadocs renders these parts without a className hook */
 #toc-title {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.06em;
 }
