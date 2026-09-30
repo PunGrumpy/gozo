@@ -1,4 +1,4 @@
-import "./global.css";
+import "./styles/globals.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 
 const Layout = ({ children }: LayoutProps<"/">) => (
   <html
-    className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} font-sans`}
+    className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-background-100 [scrollbar-gutter:stable] font-sans antialiased`}
     lang="en"
     suppressHydrationWarning
   >
