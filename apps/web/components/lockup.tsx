@@ -1,6 +1,6 @@
 /* the gozo lockup (seed and outlined wordmark) in currentColor, so it follows the theme */
 export const Lockup = ({ className }: { className?: string }) => (
-  <svg aria-hidden="true" className={className} viewBox="0 0 208 72">
+  <svg aria-hidden="true" className={className} viewBox="1 6.5 195.7 69">
     <g transform="translate(34 36) scale(0.68) rotate(15)">
       <path
         d="M0 0 C 18.05 -14.08 19.95 -39.6 0 -44 C -19.95 -39.6 -18.05 -14.08 0 0 Z"

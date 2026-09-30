@@ -1,52 +1,58 @@
 "use client";
 
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 
 import { cn } from "@/lib/utils";
 
+const themes = [
+  { icon: Monitor, id: "system", label: "System theme" },
+  { icon: Sun, id: "light", label: "Light theme" },
+  { icon: Moon, id: "dark", label: "Dark theme" },
+];
+
 /* nothing to subscribe to: the store only tells hydration apart from the client */
 const unsubscribe = () => null;
 const subscribe = () => unsubscribe;
 
-/* two letter boxes in the mark's style. The filled one follows the theme class on <html>, so
-   it is right on the first paint; aria-pressed waits until the client knows the theme. */
+/* A segmented pill like the site's buttons and Geist's switcher, built on real radios. The
+   chosen theme is only known on the client, so nothing is checked until then rather than
+   guessing wrong. */
 export const ThemeSwitch = () => {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribe,
     () => true,
     () => false
   );
-  const pressed = (theme: string) =>
-    mounted ? resolvedTheme === theme : undefined;
   return (
-    <div className="flex items-center justify-between font-mono text-xs text-gray-900 lowercase">
-      <span>theme</span>
-      <div className="flex gap-1.5">
-        <button
-          aria-pressed={pressed("light")}
-          className={cn(
-            "border-gray-1000 text-gray-1000 grid h-6 cursor-pointer place-items-center border px-2 transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
-            "border-gray-1000 bg-gray-1000 text-background-100 dark:text-gray-1000 dark:bg-transparent"
-          )}
-          onClick={() => setTheme("light")}
-          type="button"
-        >
-          light
-        </button>
-        <button
-          aria-pressed={pressed("dark")}
-          className={cn(
-            "border-gray-1000 text-gray-1000 grid h-6 cursor-pointer place-items-center border px-2 transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
-            "dark:bg-gray-1000 dark:text-background-100"
-          )}
-          onClick={() => setTheme("dark")}
-          type="button"
-        >
-          dark
-        </button>
-      </div>
+    <div className="flex items-center justify-between text-[13px] text-gray-900">
+      <span aria-hidden="true">theme</span>
+      <fieldset className="border-gray-alpha-400 inline-flex rounded-full border p-0.5">
+        <legend className="sr-only">Theme</legend>
+        {themes.map((t) => (
+          <label
+            className={cn(
+              "hover:text-gray-1000 grid size-7 cursor-pointer place-items-center rounded-full text-gray-900 transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none [&_svg]:size-3.5",
+              "has-checked:bg-gray-alpha-200 has-checked:text-gray-1000",
+              "has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--ds-focus-color)"
+            )}
+            key={t.id}
+          >
+            <input
+              aria-label={t.label}
+              checked={mounted && theme === t.id}
+              className="sr-only"
+              name="theme"
+              onChange={() => setTheme(t.id)}
+              type="radio"
+              value={t.id}
+            />
+            <t.icon aria-hidden="true" />
+          </label>
+        ))}
+      </fieldset>
     </div>
   );
 };
