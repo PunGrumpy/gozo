@@ -241,7 +241,7 @@ const HomePage = () => (
       />
     </Block>
 
-    <Block className="[view-timeline-name:--statement]" reveal={false} x="l">
+    <Block className="[view-timeline-name:--statement]" x="l">
       <p className="max-w-[26ch] pl-(--gutter) text-[clamp(28px,3.4vw,43px)] leading-[1.05] tracking-[-0.01em]">
         <span className="block">
           {words("you don't need a platform team.")}

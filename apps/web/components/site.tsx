@@ -1,21 +1,17 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { button } from "@/lib/button";
 import { cn } from "@/lib/utils";
 
-import { Mark } from "./mark";
+import { Logo } from "./logo";
 import { More, Points, Title } from "./ui";
 
 export const REPO = "https://github.com/PunGrumpy/gozo";
 
 type Side = "l" | "c";
 
-const node =
-  "absolute left-(--x) z-1 grid size-4 place-items-center border border-gray-1000 bg-background-100 font-mono text-[8px] leading-none text-gray-1000 not-italic";
-
 /* one wire per block: a grey guide at --x, inked as the block crosses the middle of the
-   viewport, a jog from the previous block's side, and a node at the joint */
+   viewport, a jog from the previous block's side drawn first, and a node at the joint */
 const Wire = ({
   from,
   glyph,
@@ -33,7 +29,12 @@ const Wire = ({
         lineClassName
       )}
     >
-      <b className="bg-gray-1000 scroll-motion:draw-y absolute inset-0 origin-top" />
+      <b
+        className={cn(
+          "bg-gray-1000 scroll-motion:draw-y absolute inset-0 origin-top",
+          from && "[--wire-from:cover_6%]"
+        )}
+      />
     </i>
     {from ? (
       <i
@@ -49,7 +50,13 @@ const Wire = ({
       </i>
     ) : null}
     {glyph ? (
-      <i aria-hidden="true" className={cn(node, "top-0 -translate-1/2")}>
+      <i
+        aria-hidden="true"
+        className={cn(
+          "border-gray-1000 bg-background-100 text-gray-1000 absolute left-(--x) z-1 grid size-4 place-items-center border font-mono text-[8px] leading-none not-italic",
+          "top-0 -translate-1/2"
+        )}
+      >
         {glyph}
       </i>
     ) : null}
@@ -64,7 +71,6 @@ export const Block = ({
   from,
   glyph,
   id,
-  reveal = true,
   x,
 }: {
   as?: "section" | "div";
@@ -73,7 +79,6 @@ export const Block = ({
   from?: Side;
   glyph?: string;
   id?: string;
-  reveal?: boolean;
   x: Side;
 }) => (
   <Tag
@@ -81,8 +86,6 @@ export const Block = ({
       "relative [--x:0%]",
       x === "c" && "md:[--x:50%]",
       Tag === "section" && "py-20 md:py-30",
-      reveal &&
-        "scroll-motion:[&>:not(i)]:reveal scroll-motion:[&>:not(i):nth-child(n+3)]:reveal-late",
       className
     )}
     id={id}
@@ -159,47 +162,60 @@ export const ScrollCue = () => (
   </div>
 );
 
-const navLink = "inline-block py-2 hover:text-gray-900";
-
 export const SiteHeader = () => (
-  <header className="flex items-center justify-between py-4 text-[13px]">
-    <Link href="/">
-      <Mark lit />
-    </Link>
-    <nav className="flex items-center gap-4 md:gap-6">
-      <Link className={navLink} href="/docs">
+  <header className="flex h-16 items-center justify-between lowercase">
+    <Logo />
+    <nav className="flex items-center gap-1">
+      <Link
+        className="text-gray-1000/80 hover:bg-gray-alpha-100 hover:text-gray-1000 inline-flex items-center rounded-lg px-3 py-2 text-sm leading-none"
+        href="/docs"
+      >
         docs
       </Link>
-      <Link className={navLink} href="/brand">
-        brand
-      </Link>
-      <a className={navLink} href={REPO}>
+      <a
+        className="text-gray-1000/80 hover:bg-gray-alpha-100 hover:text-gray-1000 inline-flex items-center rounded-lg px-3 py-2 text-sm leading-none"
+        href={REPO}
+      >
         github
       </a>
-      <Link className={button({ small: true })} href="/#install">
+      <Link
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium whitespace-nowrap transition-transform duration-160 ease-out active:scale-97 motion-reduce:transition-none",
+          "h-8 px-3.5 text-[13px]",
+          "bg-gray-1000 text-background-100 hover:bg-gray-1000/85 border-transparent",
+          "ml-2"
+        )}
+        href="/#install"
+      >
         install
       </Link>
     </nav>
   </header>
 );
 
-/* the wire stops at a node just above the wordmark. The footer is a container, so the
-   wordmark's visible height (--wm) follows its width. */
 export const SiteFooter = ({ from }: { from?: Side }) => (
   <footer className="@container relative pt-30 [--wm:calc(100cqw*160/242*0.78)] [--x:0%] md:[--x:50%]">
     <Wire from={from} glyph="■" lineClassName="bottom-(--wm)" />
     <div className="flex justify-between pb-10 text-[13px]">
-      <span>mit license</span>
+      <Link
+        href="https://www.pungrumpy.com"
+        className="inline-block py-2 hover:text-gray-900"
+      >
+        Noppakorn Kaewsalabnil
+      </Link>
       <span>
-        <a className={navLink} href={REPO}>
+        <a className="inline-block py-2 hover:text-gray-900" href={REPO}>
           github
         </a>{" "}
         ·{" "}
-        <Link className={navLink} href="/brand">
+        <Link className="inline-block py-2 hover:text-gray-900" href="/brand">
           brand
         </Link>{" "}
         ·{" "}
-        <a className={navLink} href="https://www.npmjs.com/package/gozo">
+        <a
+          className="inline-block py-2 hover:text-gray-900"
+          href="https://www.npmjs.com/package/gozo"
+        >
           npm
         </a>
       </span>
@@ -207,7 +223,10 @@ export const SiteFooter = ({ from }: { from?: Side }) => (
     <span className="sr-only">gozo</span>
     <i
       aria-hidden="true"
-      className={cn(node, "bottom-(--wm) -translate-x-1/2 translate-y-1/2")}
+      className={cn(
+        "border-gray-1000 bg-background-100 text-gray-1000 absolute left-(--x) z-1 grid size-4 place-items-center border font-mono text-[8px] leading-none not-italic",
+        "bottom-(--wm) -translate-x-1/2 translate-y-1/2"
+      )}
     >
       ●
     </i>
