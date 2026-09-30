@@ -1,5 +1,10 @@
-/* positions in percent of the 1200 × 540 stage. sx/sy/w place a piece; o is its turn in the
-   build; each brick sits in the box and starts over its piece (fx, fy), turning around ox/oy */
+import { cn } from "@/lib/utils";
+
+import { art } from "./kit-art";
+
+/* Positions in percent of the 1200 × 540 stage; o is the piece's turn in the build. Each
+   brick sits in the box; fx/fy is where its piece stands relative to that slot and ox/oy
+   is the brick's own centre, so it scales around itself. */
 const pieces = [
   {
     fx: -38.58,
@@ -78,7 +83,7 @@ const pieces = [
     sy: 74.07,
     w: 9.67,
   },
-];
+] as const;
 
 const box = { sx: 39.68, sy: 27.13, w: 20.63 };
 
@@ -88,34 +93,44 @@ const place = (p: { sx: number; sy: number; w: number }) => ({
   width: `${p.w}cqw`,
 });
 
-const art = "block h-auto w-full dark:invert dark:hue-rotate-180";
-const caption =
-  "absolute top-full left-1/2 -translate-x-1/2 pt-3.5 font-mono text-[11px] tracking-[0.04em] whitespace-nowrap text-gray-900 before:absolute before:top-0.5 before:left-1/2 before:h-2 before:w-px before:bg-gray-900";
+const Art = ({ id, label }: { id: keyof typeof art; label?: string }) => (
+  <svg
+    aria-hidden={label ? undefined : true}
+    aria-label={label}
+    className="fill-background-100 text-gray-1000 block h-auto w-full"
+    role={label ? "img" : undefined}
+    viewBox={art[id].viewBox}
+  >
+    {art[id].body}
+  </svg>
+);
 
-/* on scroll each piece lifts away and its brick drops into the gozo box. Without scroll
-   timelines, with reduced motion or on a phone, only the finished box shows. */
+/* Built like lego, one piece per turn, bottom layer first: the piece blurs into its brick,
+   the brick flies over its slot and presses down into place. When the last one lands the
+   seams fuse into one box. Without scroll timelines, with reduced motion or on a phone,
+   only the finished box shows. */
 export const Kit = () => (
-  <div className="[container-type:size] relative mb-6 aspect-[1200/540] w-full [--lift:12cqh] [--step:8svh] md:max-h-[44svh]">
+  <div className="[container-type:size] relative mb-6 aspect-[1200/540] w-full [--lift:6cqh] [--step:9svh] md:max-h-[44svh]">
     {pieces.map((p, o) => (
       <figure
         className="md:scroll-motion:lift-off absolute opacity-0"
         key={p.id}
         style={{ ...place(p), "--o": o }}
       >
-        <img
-          alt={`${p.label}, drawn as line art`}
-          className={art}
-          src={`/kit/${p.id}.svg`}
-        />
-        <figcaption className={caption}>{p.label}</figcaption>
+        <Art id={p.id} label={`${p.label}, drawn as line art`} />
+        <figcaption
+          className={cn(
+            "absolute top-full left-1/2 -translate-x-1/2 pt-3.5 font-mono text-xs tracking-[0.04em] whitespace-nowrap text-gray-900 before:absolute before:top-0.5 before:left-1/2 before:h-2 before:w-px before:bg-gray-900"
+          )}
+        >
+          {p.label}
+        </figcaption>
       </figure>
     ))}
     {pieces.map((p, o) => (
-      <img
-        alt=""
-        className={`md:scroll-motion:snap absolute opacity-0 ${art}`}
+      <div
+        className="md:scroll-motion:snap absolute opacity-0"
         key={p.id}
-        src={`/kit/brick-${p.id}.svg`}
         style={{
           ...place(box),
           "--fx": p.fx,
@@ -124,15 +139,20 @@ export const Kit = () => (
           transformOrigin: `${p.ox} ${p.oy}`,
           zIndex: o + 1,
         }}
-      />
+      >
+        <Art id={`brick-${p.id}`} />
+      </div>
     ))}
     <figure
-      className="md:scroll-motion:fade-in-scroll absolute z-20 [--from:66svh] [--to:72svh]"
+      className="md:scroll-motion:fade-in-scroll absolute z-20 [--from:calc(7.2*var(--step))] [--to:calc(7.8*var(--step))]"
       style={place(box)}
     >
-      <img alt="gozo, drawn as line art" className={art} src="/kit/one.svg" />
+      <Art id="one" label="gozo, drawn as line art" />
       <figcaption
-        className={`${caption} md:scroll-motion:fade-in-scroll [--from:76svh] [--to:86svh]`}
+        className={cn(
+          "absolute top-full left-1/2 -translate-x-1/2 pt-3.5 font-mono text-xs tracking-[0.04em] whitespace-nowrap text-gray-900 before:absolute before:top-0.5 before:left-1/2 before:h-2 before:w-px before:bg-gray-900",
+          "md:scroll-motion:fade-in-scroll [--from:calc(7.8*var(--step))] [--to:calc(8.6*var(--step))]"
+        )}
       >
         gozo
       </figcaption>
