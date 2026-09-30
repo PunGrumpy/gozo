@@ -6,10 +6,9 @@ const pieces = [
   { id: "deploy", label: "gozo deploy" },
   { id: "status", label: "gozo status" },
   { id: "gozo", label: "gozo" },
-  { id: "one", label: "gozo" },
 ];
 
-/* the kit starts scattered across the stage and folds into one box as you scroll; scattered positions live in kit.generated.css, the motion in landing.css */
+/* on scroll each piece turns into a brick of the gozo box and snaps into place; positions live in kit.generated.css, the motion in landing.css */
 export const Kit = () => (
   <div className="kit">
     {pieces.map((p) => (
@@ -18,5 +17,18 @@ export const Kit = () => (
         <figcaption>{p.label}</figcaption>
       </figure>
     ))}
+    {pieces.map((p) => (
+      <img
+        alt=""
+        className="brick"
+        data-id={p.id}
+        key={p.id}
+        src={`/kit/brick-${p.id}.svg`}
+      />
+    ))}
+    <figure className="piece" data-id="one">
+      <img alt="gozo, drawn as line art" src="/kit/one.svg" />
+      <figcaption>gozo</figcaption>
+    </figure>
   </div>
 );

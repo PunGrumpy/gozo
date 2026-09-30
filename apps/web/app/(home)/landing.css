@@ -196,29 +196,37 @@
   aspect-ratio: 1200 / 540;
   max-height: 44svh;
   margin: 0 0 24px;
+  /* scroll per piece, and how high a brick hovers before it drops in */
+  --step: 8svh;
+  --lift: 12cqh;
 }
-.landing .piece {
-  --cx: 50;
-  --cy: 45;
+.landing .piece,
+.landing .brick {
+  --start: calc(var(--o) * var(--step));
   position: absolute;
   left: calc(var(--sx) * 1cqw);
   top: calc(var(--sy) * 1cqh);
   width: calc(var(--w) * 1cqw);
   margin: 0;
   opacity: 0;
-  translate: calc((var(--cx) - var(--w) / 2 - var(--sx)) * 1cqw)
-    calc((var(--cy) - var(--h) / 2 - var(--sy)) * 1cqh);
+}
+.landing .brick {
+  z-index: calc(var(--o) + 1);
+  display: block;
+  height: auto;
+  transform-origin: var(--ox) var(--oy);
 }
 .landing .piece[data-id="one"] {
+  z-index: 20;
   opacity: 1;
-  translate: 0 0;
 }
 .landing .piece img {
   display: block;
   width: 100%;
   height: auto;
 }
-.dark .landing .piece img {
+.dark .landing .piece img,
+.dark .landing .brick {
   filter: invert(1) hue-rotate(180deg);
 }
 .landing .piece figcaption {
@@ -834,24 +842,25 @@
   }
   /* one animation per element: chromium mishandles comma-separated animation-range lists */
   .landing .piece {
-    animation: assemble linear both;
+    animation: lift-off linear both;
     animation-timeline: scroll(root);
-    animation-range: 0 80svh;
+    animation-range: var(--start) calc(var(--start) + 0.5 * var(--step));
+  }
+  .landing .brick {
+    animation: snap linear both;
+    animation-timeline: scroll(root);
+    animation-range: calc(var(--start) + 0.2 * var(--step))
+      calc(var(--start) + 2 * var(--step));
   }
   .landing .piece[data-id="one"] {
-    animation: appear linear both;
+    animation: fade-in linear both;
     animation-timeline: scroll(root);
-    animation-range: 0 80svh;
-  }
-  .landing .piece:not([data-id="one"]) figcaption {
-    animation: fade-out linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0 25svh;
+    animation-range: 66svh 72svh;
   }
   .landing .piece[data-id="one"] figcaption {
     animation: fade-in linear both;
     animation-timeline: scroll(root);
-    animation-range: 70svh 85svh;
+    animation-range: 76svh 86svh;
   }
   .landing .scatter {
     view-timeline-name: --statement;
@@ -887,43 +896,49 @@
     transform: scaleX(1);
   }
 }
-@keyframes assemble {
-  0% {
-    translate: 0 0;
-    opacity: 1;
-    scale: 1;
-  }
-  62% {
-    translate: calc((var(--cx) - var(--w) / 2 - var(--sx)) * 1cqw)
-      calc((var(--cy) - var(--h) / 2 - var(--sy)) * 1cqh);
-    opacity: 1;
-    scale: 1;
-  }
-  90%,
-  100% {
-    translate: calc((var(--cx) - var(--w) / 2 - var(--sx)) * 1cqw)
-      calc((var(--cy) - var(--h) / 2 - var(--sy)) * 1cqh);
-    opacity: 0;
-    scale: 0.4;
-  }
-}
-@keyframes appear {
-  0%,
-  68% {
-    opacity: 0;
-    scale: 0.9;
-  }
-  100% {
-    opacity: 1;
-    scale: 1;
-  }
-}
-@keyframes fade-out {
+@keyframes lift-off {
   from {
     opacity: 1;
+    translate: 0 0;
+    scale: 1;
   }
   to {
     opacity: 0;
+    translate: 0 -3cqh;
+    scale: 0.9;
+  }
+}
+/* the brick drops a little past its slot and settles back; while it moves it draws above the others */
+@keyframes snap {
+  0% {
+    z-index: 10;
+    opacity: 0;
+    translate: calc(var(--fx) * 1cqw) calc(var(--fy) * 1cqh - 3cqh);
+    scale: 0.9;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  15% {
+    opacity: 1;
+  }
+  55% {
+    z-index: 10;
+    translate: 0 calc(-1 * var(--lift));
+    scale: 1;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  80% {
+    z-index: calc(var(--o) + 1);
+    translate: 0 0.6cqh;
+    animation-timing-function: ease-out;
+  }
+  90% {
+    translate: 0 -0.3cqh;
+  }
+  100% {
+    z-index: calc(var(--o) + 1);
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
   }
 }
 @keyframes fade-in {
@@ -979,6 +994,7 @@
   .landing .statement .w,
   .landing .piece[data-id],
   .landing .piece[data-id] figcaption,
+  .landing .brick,
   .landing header .k span {
     animation: none;
   }
@@ -1039,7 +1055,8 @@
     max-height: none;
   }
   .landing .piece[data-id],
-  .landing .piece[data-id] figcaption {
+  .landing .piece[data-id] figcaption,
+  .landing .brick {
     animation: none;
   }
   .landing .scene img {
