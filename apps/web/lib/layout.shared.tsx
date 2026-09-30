@@ -1,5 +1,7 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
+import { Mark } from "@/components/mark";
+
 import { gitConfig } from "./shared";
 
 export const baseOptions = (): BaseLayoutProps => ({
@@ -8,17 +10,5 @@ export const baseOptions = (): BaseLayoutProps => ({
     { active: "none", text: "home", url: "/" },
     { active: "none", text: "brand", url: "/brand" },
   ],
-  nav: {
-    title: (
-      <span className="k">
-        <span aria-hidden="true" className="on">
-          g
-        </span>
-        <span aria-hidden="true">o</span>
-        <span aria-hidden="true">z</span>
-        <span aria-hidden="true">o</span>
-        <span className="sr-only">gozo</span>
-      </span>
-    ),
-  },
+  nav: { title: <Mark /> },
 });
