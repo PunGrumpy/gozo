@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#FCFCFD" />
+  <title>gozo brand</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --paper: #fcfcfd;
+      --ink: #101828;
+      --ash: #667085;
+      --line: #e4e7ec;
+      --well: #0b1220;
+      --ok: #3fb950;
+      --warn: #d29922;
+      --fail: #f85149;
+      --link: #58a6ff;
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --edge: rgb(0 0 0/0.1);
+      --edge-dark: rgb(255 255 255/0.1);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html {
+      background: var(--paper);
+      color: var(--ink);
+      font:
+        16px/1.5 Geist,
+        Inter,
+        system-ui,
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      margin: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 120px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    header .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Instrument Serif", serif;
+      font-size: 30px;
+      letter-spacing: -0.02em;
+    }
+    header .brand img {
+      transform: translateY(1px);
+    }
+    header nav a {
+      color: var(--ink);
+      text-decoration: none;
+      margin-left: 28px;
+      font-size: 15px;
+      padding: 6px 0;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      header nav a:hover {
+        color: var(--ash);
+      }
+    }
+    a:focus-visible,
+    .btn:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+      border-radius: 999px;
+    }
+    header .cta {
+      background: var(--ink);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-weight: 500;
+      font-size: 14px;
+      margin-left: 12px;
+      transition: transform 160ms var(--ease-out);
+    }
+    header .cta:active,
+    .btn:active,
+    figure figcaption .acts a:active {
+      transform: scale(0.97);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      header .cta:hover,
+      .btn:hover {
+        background: #1d2939;
+      }
+    }
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 120px 120px;
+    }
+    section {
+      padding: 120px 0 0;
+    }
+    h1 {
+      font-family: "Instrument Serif", serif;
+      font-weight: 400;
+      font-size: 88px;
+      line-height: 0.95;
+      letter-spacing: -0.025em;
+      margin: 0 0 20px;
+    }
+    h2 {
+      font-family: "Instrument Serif", serif;
+      font-weight: 400;
+      font-size: 44px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0 0 20px;
+    }
+    h3 {
+      font-family: "Instrument Serif", serif;
+      font-weight: 400;
+      font-size: 28px;
+      letter-spacing: -0.015em;
+      margin: 0 0 8px;
+    }
+    .lede {
+      font-size: 19px;
+      color: var(--ash);
+      max-width: 620px;
+      margin: 0 0 40px;
+    }
+    p {
+      color: var(--ash);
+      max-width: 620px;
+      margin: 0 0 14px;
+    }
+    .hero {
+      height: 520px;
+      border-radius: 22px;
+      overflow: hidden;
+      position: relative;
+      isolation: isolate;
+      background: #0f1a2a;
+      box-shadow: inset 0 0 0 1px var(--edge-dark);
+    }
+    .hero img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 60%;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(8, 20, 24, 0) 55%,
+        rgba(8, 20, 24, 0.55)
+      );
+      pointer-events: none;
+    }
+    .grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.14;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      background-repeat: repeat;
+      background-size: 200px 200px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    }
+    .hero .caption {
+      position: absolute;
+      left: 32px;
+      bottom: 28px;
+      z-index: 1;
+      color: #fff;
+      font-family: "Instrument Serif", serif;
+      font-size: 26px;
+      letter-spacing: -0.01em;
+      text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
+    }
+    .hero .caption small {
+      display: block;
+      font:
+        14px/1.4 Geist,
+        sans-serif;
+      opacity: 0.8;
+      max-width: 420px;
+      margin-top: 4px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 999px;
+      padding: 11px 18px;
+      font-weight: 500;
+      font-size: 15px;
+      text-decoration: none;
+      margin-top: 28px;
+      transition: transform 160ms var(--ease-out);
+    }
+    .grid {
+      display: grid;
+      gap: 24px;
+    }
+    .g2 {
+      grid-template-columns: 1fr 1fr;
+    }
+    .g3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    figure {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 0;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    figure .stage {
+      flex: 1;
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    figure .stage img {
+      outline: 1px solid transparent;
+      outline-offset: -1px;
+    }
+    figure .stage.social {
+      padding: 8px;
+    }
+    figure .stage.social img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      outline-color: var(--edge);
+    }
+    figure .stage.ink {
+      background: var(--ink);
+    }
+    figure figcaption {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--ash);
+    }
+    figure figcaption span b {
+      color: var(--ink);
+      font-weight: 500;
+    }
+    figure figcaption .acts a {
+      color: var(--ink);
+      text-decoration: none;
+      margin-left: 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      line-height: 1;
+      display: inline-block;
+      transition: transform 160ms var(--ease-out);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      figure figcaption .acts a:hover {
+        border-color: var(--ash);
+      }
+    }
+    .type {
+      border-top: 1px solid var(--line);
+      padding: 32px 0;
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    .type .ag {
+      font-size: 88px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .type .name {
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+    .type .sample {
+      font-size: 28px;
+      line-height: 1.2;
+      margin: 14px 0 8px;
+      color: var(--ink);
+    }
+    .type .abc {
+      font-size: 15px;
+      color: var(--ash);
+      word-break: break-all;
+    }
+    .serif {
+      font-family: "Instrument Serif", serif;
+    }
+    .sans {
+      font-family: Geist, sans-serif;
+    }
+    .mono {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-variant-ligatures: none;
+      font-variant-numeric: tabular-nums;
+    }
+    .dimtxt {
+      color: var(--ash);
+    }
+    .spec {
+      border-top: 1px solid var(--line);
+    }
+    .spec-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      align-items: baseline;
+      gap: 24px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .spec-row > span:last-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tok {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--ash);
+      letter-spacing: 0.02em;
+    }
+    .tok em {
+      font-style: normal;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: 6px;
+      font-size: 10px;
+    }
+    .board {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 18px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0 47px,
+        var(--line) 47px 48px
+      );
+      background-origin: content-box;
+    }
+    .board-h,
+    .board-f {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--ash);
+      font-family: "Geist Mono", ui-monospace, monospace;
+    }
+    .board-h b {
+      color: var(--ink);
+      font-weight: 500;
+      font-family: Geist, sans-serif;
+      font-size: 14px;
+    }
+    .board .glyphs {
+      flex: 1;
+      color: var(--ink);
+      line-height: 48px;
+      min-height: 192px;
+    }
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .sw {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .sw i {
+      display: block;
+      height: 120px;
+      box-shadow: inset 0 0 0 1px var(--edge);
+    }
+    .sw div {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--ash);
+    }
+    .sw div b {
+      display: block;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .term {
+      background: var(--well);
+      color: #e6edf3;
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 22px 26px;
+      border-radius: 16px;
+      white-space: pre;
+      max-width: 720px;
+    }
+    .dim {
+      color: #8b949e;
+    }
+    .ok {
+      color: var(--ok);
+    }
+    .warn {
+      color: var(--warn);
+    }
+    .fail {
+      color: var(--fail);
+    }
+    .link {
+      color: var(--link);
+    }
+    .voice {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .voice > div {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px 24px;
+    }
+    .voice .say {
+      margin-bottom: 10px;
+    }
+    .voice .say {
+      font-family: "Instrument Serif", serif;
+      font-size: 26px;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .voice .not {
+      font-size: 15px;
+      color: var(--ash);
+      text-decoration: line-through;
+    }
+    .walls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .wall {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .wall .img {
+      aspect-ratio: 4/5;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      box-shadow: inset 0 0 0 1px var(--edge-dark);
+      background: #0e1416;
+    }
+    .wall .img img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .wall .img .grain {
+      opacity: 0.18;
+    }
+    .wall .txt {
+      padding: 14px 16px;
+    }
+    .wall .txt b {
+      display: block;
+      font-family: "Instrument Serif", serif;
+      font-weight: 400;
+      font-size: 22px;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .wall .txt span {
+      font-size: 14px;
+      color: var(--ash);
+    }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 40px 120px;
+      color: var(--ash);
+      font-size: 14px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      header .cta,
+      .btn,
+      figure figcaption .acts a {
+        transition: none;
+      }
+    }
+  </style>
+  <header>
+    <div class="brand"><img src="symbol-ink.svg" height="28" alt="" />gozo</div>
+    <nav>
+      <a href="#">Docs</a><a href="#">Changelog</a><a href="#">GitHub</a
+      ><a class="cta" href="#">Install</a>
+    </nav>
+  </header>
+  <main>
+    <section style="padding-top: 60px">
+      <h1>gozo brand assets</h1>
+      <p class="lede">
+        Logos, type, colour and a few scenes. Grab what you need.
+      </p>
+      <div class="hero">
+        <img src="scenes/crossing.jpg" alt="" />
+        <div class="caption">
+          The crossing<small
+            >Waiting on the light with nothing left to carry. It shipped before
+            dinner.</small
+          >
+        </div>
+      </div>
+      <a class="btn" href="#">Download all assets</a>
+    </section>
+
+    <section>
+      <h2>Naming</h2>
+      <p>
+        <b style="color: var(--ink); font-weight: 500">gozo</b> is the brand
+        name, always lowercase, even at the start of a sentence.
+      </p>
+      <p>
+        It is one word. Do not write Gozo, GoZo, gozo CLI or gozo.dev as the
+        name. In Spanish and Portuguese, <i>gozo</i> means joy. That is the
+        point.
+      </p>
+    </section>
+
+    <section>
+      <h2>Logo</h2>
+      <p class="lede">
+        Wordmark for recognition, symbol when space is tight. Ink on paper,
+        paper on ink. Do not alter the files.
+      </p>
+      <div class="g2 grid">
+        <figure>
+          <div class="stage">
+            <img src="logo-ink.svg" height="72" alt="gozo" />
+          </div>
+          <figcaption>
+            <span><b>Lockup</b> · ink</span
+            ><span class="acts"><a href="logo-ink.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage ink">
+            <img src="logo-paper.svg" height="72" alt="gozo" />
+          </div>
+          <figcaption>
+            <span><b>Lockup</b> · paper</span
+            ><span class="acts"><a href="logo-paper.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage">
+            <img src="wordmark-ink.svg" height="72" alt="gozo" />
+          </div>
+          <figcaption>
+            <span><b>Wordmark</b> · ink</span
+            ><span class="acts"><a href="wordmark-ink.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage ink">
+            <img src="wordmark-paper.svg" height="72" alt="gozo" />
+          </div>
+          <figcaption>
+            <span><b>Wordmark</b> · paper</span
+            ><span class="acts"><a href="wordmark-paper.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage">
+            <img src="symbol-ink.svg" height="96" alt="gozo symbol" />
+          </div>
+          <figcaption>
+            <span><b>Symbol</b> · ink</span
+            ><span class="acts"><a href="symbol-ink.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage ink">
+            <img src="symbol-paper.svg" height="96" alt="gozo symbol" />
+          </div>
+          <figcaption>
+            <span><b>Symbol</b> · paper</span
+            ><span class="acts"><a href="symbol-paper.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage" style="gap: 24px">
+            <img src="favicon.svg" height="64" alt="" /><img
+              src="favicon.svg"
+              height="32"
+              alt=""
+            /><img src="favicon.svg" height="16" alt="" />
+          </div>
+          <figcaption>
+            <span><b>Favicon</b> · 64, 32, 16</span
+            ><span class="acts"><a href="favicon.svg">SVG</a></span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="stage social">
+            <img src="social-preview.svg" alt="" />
+          </div>
+          <figcaption>
+            <span><b>Social preview</b> · 1280 × 640</span
+            ><span class="acts"
+              ><a href="social-preview.png">PNG</a
+              ><a href="social-preview.svg">SVG</a></span
+            >
+          </figcaption>
+        </figure>
+      </div>
+      <p style="margin-top: 28px">
+        <b style="color: var(--ink); font-weight: 500">The seed.</b> Three
+        petals folded together, about to open. gozo means joy; the seed is the
+        version of it that fits in a favicon. The petals are one shape repeated
+        at 120°, tilted 15° so the mark leans forward, with a 3 unit gap at the
+        centre that survives down to 12 px.
+      </p>
+    </section>
+
+    <section>
+      <h2>Typography</h2>
+      <p class="lede">
+        Instrument Serif for headlines, Geist for the reading, Geist Mono for
+        the terminal. All three are open source. Shown the way they are used: as
+        a scale, not a sample.
+      </p>
+
+      <div class="spec">
+        <div class="spec-row">
+          <span class="tok">D88</span
+          ><span
+            class="serif"
+            style="font-size: 88px; line-height: 1; letter-spacing: -0.025em"
+            >gozo brand</span
+          >
+        </div>
+        <div class="spec-row">
+          <span class="tok">H44</span
+          ><span
+            class="serif"
+            style="font-size: 44px; line-height: 1.05; letter-spacing: -0.02em"
+            >The joy of Go, handled.</span
+          >
+        </div>
+        <div class="spec-row">
+          <span class="tok">H28</span
+          ><span class="serif" style="font-size: 28px; letter-spacing: -0.015em"
+            >Ship at five. Dinner at six.</span
+          >
+        </div>
+        <div class="spec-row">
+          <span class="tok">L19</span
+          ><span class="sans" style="font-size: 19px; color: var(--ash)"
+            >One binary. Every Go workflow.</span
+          >
+        </div>
+        <div class="spec-row">
+          <span class="tok">B16</span
+          ><span class="sans" style="font-size: 16px"
+            >gozo wraps the go command with the workflow of Vercel CLI.</span
+          >
+        </div>
+        <div class="spec-row">
+          <span class="tok">S13 <em>500</em></span
+          ><span class="sans" style="font-size: 13px; font-weight: 500"
+            >Wordmark · ink</span
+          >
+        </div>
+        <div class="spec-row">
+          <span class="tok">C14 <em>mono</em></span
+          ><span class="mono" style="font-size: 14px"
+            >gozo deploy --prod <span class="dimtxt">[42s]</span></span
+          >
+        </div>
+      </div>
+
+      <div class="g3 grid" style="margin-top: 24px">
+        <div class="board">
+          <div class="board-h">
+            <b>Instrument Serif</b><span>Regular · display</span>
+          </div>
+          <div
+            class="serif glyphs"
+            style="font-size: 44px; letter-spacing: -0.02em"
+          >
+            Aa Gg Qq Rr Zz<br />0123456789<br />gozo <i>gozo</i>
+          </div>
+          <div class="board-f">
+            <span>cap 0.70</span><span>x 0.44</span><span>tracking −2%</span>
+          </div>
+        </div>
+        <div class="board">
+          <div class="board-h"><b>Geist</b><span>400 · 500 · 600</span></div>
+          <div class="sans glyphs" style="font-size: 30px; line-height: 1.35">
+            <span style="font-weight: 400">Regular.</span><br /><span
+              style="font-weight: 500"
+              >Medium.</span
+            ><br /><span style="font-weight: 600">Semibold.</span><br /><span
+              style="font-size: 22px; color: var(--ash)"
+              >Aa Bb Cc 0123</span
+            >
+          </div>
+          <div class="board-f">
+            <span>body 16/24</span><span>ui 13 to 15</span
+            ><span>tracking 0</span>
+          </div>
+        </div>
+        <div class="board">
+          <div class="board-h">
+            <b>Geist Mono</b><span>400 · terminal</span>
+          </div>
+          <div class="mono glyphs" style="font-size: 22px; line-height: 1.5">
+            <span class="dimtxt">$</span> gozo doctor<br /><span
+              style="color: var(--ok)"
+              >✓</span
+            >
+            <span style="color: var(--warn)">!</span>
+            <span style="color: var(--fail)">✗</span>
+            <span class="dimtxt">></span> <span class="dimtxt">-</span><br />0O
+            1l Il {} [] => ->
+          </div>
+          <div class="board-f">
+            <span>code 14/22</span><span>ligatures off</span
+            ><span>tabular</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Colour</h2>
+      <p class="lede">
+        Two colours. Ink and paper. Everything else is the terminal’s own
+        palette, so gozo looks at home in every theme.
+      </p>
+      <div class="swatches">
+        <div class="sw">
+          <i style="background: #101828"></i>
+          <div><b>Ink</b>#101828 · text, wordmark, buttons</div>
+        </div>
+        <div class="sw">
+          <i style="background: #fcfcfd"></i>
+          <div><b>Paper</b>#FCFCFD · backgrounds</div>
+        </div>
+        <div class="sw">
+          <i style="background: #667085"></i>
+          <div><b>Ash</b>#667085 · secondary text</div>
+        </div>
+        <div class="sw">
+          <i style="background: #e4e7ec"></i>
+          <div><b>Line</b>#E4E7EC · borders, dividers</div>
+        </div>
+      </div>
+      <div style="height: 32px"></div>
+      <div class="term">
+        <span class="dim">$</span> gozo deploy --prod
+        <span class="dim">></span> Deploying api to kubernetes
+        <span class="dim">(production)</span> <span class="ok">✓</span> docker
+        27.1.0 <span class="ok">✓</span> Deployed ghcr.io/acme/api:3f9c2a1
+        <span class="dim">[42s]</span> <span class="warn">!</span> 2
+        dependencies can be updated
+        <span class="link">https://api.acme.dev</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Voice</h2>
+      <p class="lede">
+        Short sentences that end. Second person. Calm, never hyped. Say what
+        happened, then stop.
+      </p>
+      <div class="voice">
+        <div>
+          <div class="say">Deployed. Logs are one command away.</div>
+          <div class="not">🚀 Successfully deployed your application!</div>
+        </div>
+        <div>
+          <div class="say">Ship at five. Dinner at six.</div>
+          <div class="not">Supercharge your developer productivity</div>
+        </div>
+        <div>
+          <div class="say">It never forgets to tidy, so you don’t either.</div>
+          <div class="not">Powerful dependency management built in</div>
+        </div>
+        <div>
+          <div class="say">One binary. Every Go workflow.</div>
+          <div class="not">
+            The all-in-one toolkit for modern Go development
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Scenes</h2>
+      <p class="lede">
+        Four scenes for screens, headers and social. Every one is dusk with a
+        single warm light.
+      </p>
+      <div class="walls">
+        <div class="wall">
+          <div class="img"><img src="scenes/last-light.jpg" alt="" /></div>
+          <div class="txt">
+            <b>Last light</b
+            ><span
+              >The floodlight comes on before the sky goes. Somebody already
+              went home.</span
+            >
+          </div>
+        </div>
+        <div class="wall">
+          <div class="img"><img src="scenes/weather.jpg" alt="" /></div>
+          <div class="txt">
+            <b>Weather</b
+            ><span>It rained anyway. The deploy did not notice.</span>
+          </div>
+        </div>
+        <div class="wall">
+          <div class="img"><img src="scenes/after-hours.jpg" alt="" /></div>
+          <div class="txt">
+            <b>After hours</b
+            ><span>Dinner ran long. Nobody checked a phone.</span>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 28px">
+        Blue hour, not night. One warm light in a teal world: a floodlight, a
+        raincoat, a shop sign. Wet surfaces, visible grain, people from behind
+        or small in the frame, the work already done. Shot on the street, never
+        rendered.
+      </p>
+    </section>
+  </main>
+  <footer>
+    Questions about using the gozo brand? Open an issue on GitHub.
+  </footer>
+</html>

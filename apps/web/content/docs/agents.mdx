@@ -1,0 +1,29 @@
+---
+title: For agents
+description: JSON on every command, a read-only API, and stable exit codes.
+---
+
+Every command returns one JSON document with a `schema` field such as `gozo.doctor/v1` or `gozo.test/v1`. Errors are JSON as well, with `schema: "gozo.error/v1"`. Fields never change inside a schema version; a breaking change bumps the version.
+
+```bash
+gozo doctor --json | jq '.findings[] | select(.status == "fail")'
+gozo test --json | jq '.summary'
+gozo deploy --prod --json | jq -r '.deployment.url'
+```
+
+## gozo api
+
+A read-only view of project state for scripts and agents.
+
+```bash
+gozo api ls          # every resource
+gozo api project     # name, root, modules, Go version, link target
+gozo api config      # gozo.toml as parsed, defaults filled in
+gozo api env         # variables per environment, values masked
+gozo api deployments # local deployment history
+gozo api doctor      # same document as gozo doctor --json
+```
+
+## Non-interactive mode
+
+When stdin is not a terminal, or `CI`, `CLAUDECODE`, `CURSOR_AGENT` or `AGENT` is set, gozo never prompts. A prompt that would block returns an error telling you which flag to pass instead, usually `--yes`.

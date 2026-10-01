@@ -1,0 +1,427 @@
+---
+title: Commands
+description: Every gozo command with its flags, straight from --help.
+---
+
+Every command accepts the global flags `--json`, `--cwd`, `--yes`, `--non-interactive`, `--no-color`, `--debug` and `--project`. The output below is generated from the binary.
+
+## gozo init
+
+```text
+Create gozo.toml (and a Go module if needed) in a directory
+
+Usage: gozo init [OPTIONS] [PATH]
+
+Arguments:
+  [PATH]  Directory to initialise. Defaults to the current directory
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --name <NAME>      Project name written to gozo.toml. Defaults to the module's last element
+  -C, --cwd <DIR>        Run as if started in this directory
+      --module <MODULE>  Module path for `go mod init` when there is no go.mod yet
+      --cmd <NAME>       Name of the main package to create under cmd/ when there is no go.mod yet [default: api]
+  -y, --yes              Answer every prompt with its default
+      --force            Overwrite an existing gozo.toml
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo dev
+
+```text
+Run the app locally with env files loaded and restart on change
+
+Usage: gozo dev [OPTIONS] [-- <ARGS>...]
+
+Arguments:
+  [ARGS]...  Arguments passed to the program, after `--`
+
+Options:
+      --cmd <PKG>        Main package to run, e.g. ./cmd/api. Overrides dev.cmd in gozo.toml
+      --json             Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>        Run as if started in this directory
+  -l, --listen <PORT>    Port to expose as PORT. Overrides dev.port in gozo.toml
+      --no-watch         Run once and exit when the program exits; do not watch for changes
+  -y, --yes              Answer every prompt with its default
+      --env-file <FILE>  Env file(s) to load instead of the defaults. Repeatable; later files win
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo env
+
+```text
+Manage environment variables (ls, add, rm, update, pull, run)
+
+Usage: gozo env [OPTIONS] <COMMAND>
+
+Commands:
+  ls      List variables, values masked unless --show-values
+  add     Add a variable. The value comes from --value, stdin, or a hidden prompt
+  update  Change an existing variable (same as `add --force`)
+  rm      Remove a variable
+  pull    Write an environment's variables to a dotenv file (default .env.local)
+  run     Run a command with an environment's variables injected (no file is written)
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo run
+
+```text
+Run a task defined in gozo.toml
+
+Usage: gozo run [OPTIONS] [TASK] [ARGS]...
+
+Arguments:
+  [TASK]     Task name from gozo.toml `[tasks]`. Omit to list tasks
+  [ARGS]...  Arguments appended to the task command
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+  -l, --list             List tasks and exit
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo tool
+
+```text
+Manage tools declared with `tool` directives in go.mod
+
+Usage: gozo tool [OPTIONS] [COMMAND]
+
+Commands:
+  ls        List tools declared in go.mod (default)
+  add       Add a tool: `go get -tool <pkg[@version]>`
+  rm        Remove a tool: `go get -tool <pkg>@none`
+  run       Run a tool: `go tool <path> [ARGS...]`
+  outdated  Show tool modules that have a newer version (needs the network)
+  update    Update one tool, or all, to `@latest`
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --module <DIR>     Module directory to operate on (default: the module containing the current directory, else the root module)
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo doctor
+
+```text
+Check the health of the current Go project
+
+Usage: gozo doctor [OPTIONS]
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --offline          Skip checks that need the network
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo check
+
+```text
+Run vet, format and lint checks across every module
+
+Usage: gozo check [OPTIONS]
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --no-vet           Skip `go vet`
+  -C, --cwd <DIR>        Run as if started in this directory
+      --no-fmt           Skip the gofmt check
+      --no-lint          Skip golangci-lint even when it is installed
+  -y, --yes              Answer every prompt with its default
+      --fix              Rewrite unformatted files (`gofmt -w`) and let golangci-lint apply fixes
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo test
+
+```text
+Run tests across every module with a unified summary
+
+Usage: gozo test [OPTIONS] [PACKAGES]... [-- <GO TEST ARGS>...]
+
+Arguments:
+  [PACKAGES]...      Packages to test, e.g. `./internal/...`. Default: `./...` in every module
+  [GO TEST ARGS]...  Extra arguments passed to `go test` verbatim (after `--`)
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --run <PATTERN>    Only run tests matching this regexp (`go test -run`)
+  -C, --cwd <DIR>        Run as if started in this directory
+      --race             Enable the race detector
+      --cover            Enable coverage analysis
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --short            Tell long-running tests to shorten their run
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -v, --verbose          Print every test name, not just packages
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --failfast         Stop after the first test failure
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo build
+
+```text
+Build every main package with version info injected
+
+Usage: gozo build [OPTIONS] [CMDS]...
+
+Arguments:
+  [CMDS]...  Main packages to build: a name (`api`), a path (`./cmd/api`) or an import path. Default: gozo.toml `build.cmds`, else every main package
+
+Options:
+      --json                  Emit machine-readable JSON on stdout instead of human output
+  -o, --output <DIR>          Output directory (default: gozo.toml `build.output`, else `dist`)
+  -C, --cwd <DIR>             Run as if started in this directory
+      --os <GOOS>             Target operating system (GOOS)
+      --arch <GOARCH>         Target architecture (GOARCH)
+  -y, --yes                   Answer every prompt with its default
+      --non-interactive       Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --target <GOOS/GOARCH>  Cross-compile target as GOOS/GOARCH; repeat for several
+      --no-color              Disable colors and symbols. NO_COLOR=1 does the same
+      --version <V>           Version string for `main.version` (default: `git describe`, else `dev`)
+  -d, --debug                 Show the underlying go/docker/kubectl commands as they run
+      --ldflags <FLAGS>       Extra `-ldflags`, appended after the ones gozo injects
+      --no-trimpath           Do not pass `-trimpath`
+      --project <NAME>        Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help                  Print help
+```
+
+## gozo generate
+
+```text
+Run `go generate` across every module, optionally verifying nothing changed
+
+Usage: gozo generate [OPTIONS] [PACKAGES]...
+
+Arguments:
+  [PACKAGES]...  Package patterns to generate (default `./...`)
+
+Options:
+      --check            Fail (exit 1) if generating changed any tracked or untracked file. Needs a git repository
+      --json             Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo link
+
+```text
+Link this directory to a deployment target
+
+Usage: gozo link [OPTIONS] [PATH]
+
+Arguments:
+  [PATH]  Directory to link. Defaults to the current project
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --project <NAME>   Project name to link as
+  -C, --cwd <DIR>        Run as if started in this directory
+      --target <TARGET>  Deployment target: docker or kubernetes
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+  -h, --help             Print help
+```
+
+## gozo deploy
+
+```text
+Build and deploy to the linked target
+
+Usage: gozo deploy [OPTIONS]
+
+Options:
+      --json                   Emit machine-readable JSON on stdout instead of human output
+      --prod                   Deploy to production instead of preview
+  -C, --cwd <DIR>              Run as if started in this directory
+      --target <TARGET>        Deploy to this target instead of the linked one (docker or kubernetes)
+  -e, --env <KEY=VALUE>        Runtime variable for the deployed process, on top of `gozo env`. Repeatable
+  -y, --yes                    Answer every prompt with its default
+  -b, --build-env <KEY=VALUE>  Build argument passed to `docker build --build-arg`. Repeatable
+      --non-interactive        Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color               Disable colors and symbols. NO_COLOR=1 does the same
+      --tag <TAG>              Image tag. Defaults to the short git SHA (plus `-dirty`) or a timestamp
+  -d, --debug                  Show the underlying go/docker/kubectl commands as they run
+  -f, --force                  Rebuild the image without the build cache
+      --no-wait                Return as soon as the rollout is requested instead of waiting for it
+      --project <NAME>         Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+      --logs                   Stream the underlying build and rollout output
+      --dry-run                Build the image but do not start or roll out anything
+  -m, --meta <KEY=VALUE>       Free-form metadata recorded with the deployment. Repeatable
+  -h, --help                   Print help
+```
+
+## gozo ls
+
+```text
+List recent deployments
+
+Usage: gozo ls [OPTIONS]
+
+Options:
+      --json               Emit machine-readable JSON on stdout instead of human output
+  -n, --limit <N>          Show at most this many deployments [default: 20]
+  -C, --cwd <DIR>          Run as if started in this directory
+      --environment <ENV>  Only deployments for this environment (development, preview, production)
+  -y, --yes                Answer every prompt with its default
+      --non-interactive    Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color           Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug              Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>     Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help               Print help
+```
+
+## gozo status
+
+```text
+Show the state of the linked target
+
+Usage: gozo status [OPTIONS]
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo logs
+
+```text
+Show or stream logs from the linked target
+
+Usage: gozo logs [OPTIONS]
+
+Options:
+  -f, --follow            Keep streaming new lines until interrupted
+      --json              Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>         Run as if started in this directory
+      --since <DURATION>  Only lines newer than this: `1h`, `30m`, or an RFC3339 timestamp
+  -n, --limit <N>         Maximum number of lines from the end of the log
+  -y, --yes               Answer every prompt with its default
+  -c, --container <NAME>  Container to read from (pods with several containers)
+      --non-interactive   Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color          Disable colors and symbols. NO_COLOR=1 does the same
+  -t, --timestamps        Prefix every line with its timestamp
+  -d, --debug             Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>    Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help              Print help
+```
+
+## gozo rollback
+
+```text
+Roll the linked target back to a previous deployment
+
+Usage: gozo rollback [OPTIONS] [DEPLOYMENT_ID]
+
+Arguments:
+  [DEPLOYMENT_ID]  Deployment id to roll back to (see `gozo ls`), or `status`. Defaults to the deployment before the current one
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --timeout <SECS>   Seconds to wait for the rollout to finish [default: 300]
+  -C, --cwd <DIR>        Run as if started in this directory
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo api
+
+```text
+Query project state as JSON, for scripts and agents
+
+Usage: gozo api [OPTIONS] [RESOURCE]
+
+Arguments:
+  [RESOURCE]  Resource to read, e.g. project, env/production. `ls` lists them
+
+Options:
+      --json             Emit machine-readable JSON on stdout instead of human output
+      --raw              Compact single-line JSON instead of pretty-printed
+  -C, --cwd <DIR>        Run as if started in this directory
+      --show-values      Include env values (masked by default)
+  -y, --yes              Answer every prompt with its default
+      --non-interactive  Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color         Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug            Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>   Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help             Print help
+```
+
+## gozo update
+
+```text
+Update gozo itself
+
+Usage: gozo update [OPTIONS]
+
+Options:
+      --check              Only report whether a newer version exists
+      --json               Emit machine-readable JSON on stdout instead of human output
+  -C, --cwd <DIR>          Run as if started in this directory
+      --version <VERSION>  Install this exact version instead of the latest
+  -y, --yes                Answer every prompt with its default
+      --non-interactive    Never prompt; fail instead. Implied when stdin is not a terminal or an agent is detected
+      --no-color           Disable colors and symbols. NO_COLOR=1 does the same
+  -d, --debug              Show the underlying go/docker/kubectl commands as they run
+      --project <NAME>     Project name to use instead of the linked or configured one [env: GOZO_PROJECT=]
+  -h, --help               Print help
+```

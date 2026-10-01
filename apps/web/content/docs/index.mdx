@@ -1,0 +1,24 @@
+---
+title: What is gozo
+description: One binary that gives Go projects the workflow of Vercel CLI.
+---
+
+gozo is a developer CLI for Go projects, written in Rust. One native binary wraps the `go` command with the workflow of Vercel CLI. It never re-implements Go tooling: every fact comes from `go env`, `go mod`, `go work`, `go list` and `go test` in JSON. Every gozo command answers in JSON too, so you and your coding agents share one tool.
+
+## What it covers
+
+| Phase    | Commands                                       |
+| -------- | ---------------------------------------------- |
+| Develop  | `init`, `dev`, `env`, `run`, `tool`            |
+| Validate | `doctor`, `check`, `test`, `generate`, `build` |
+| Deploy   | `link`, `deploy`                               |
+| Operate  | `ls`, `status`, `logs`, `rollback`             |
+| Agent    | `api`, `update`                                |
+
+## Conventions borrowed from Vercel CLI
+
+- stdout is the result, stderr is the chatter. `gozo deploy > url.txt` works.
+- `--yes` accepts defaults. `--non-interactive` fails instead of prompting, and is implied in CI and under coding agents.
+- `--cwd`, `--debug`, `--no-color` or `NO_COLOR`, `--project` or `GOZO_PROJECT`.
+- `.gozo/` is the machine-local link directory, like `.vercel/`. It is git-ignored automatically.
+- Exit code `0` means success, `1` means the thing you checked is bad, `2` means gozo could not do the job.
