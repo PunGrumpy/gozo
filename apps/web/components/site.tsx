@@ -214,7 +214,7 @@ export const SiteFooter = ({ from }: { from?: Side }) => (
         ·{" "}
         <a
           className="inline-block py-2 hover:text-gray-900"
-          href="https://www.npmjs.com/package/gozo"
+          href="https://www.npmjs.com/package/gozo-cli"
         >
           npm
         </a>
