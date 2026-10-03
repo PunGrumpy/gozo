@@ -1,0 +1,31 @@
+---
+title: Getting started
+description: Install gozo and run it inside a Go project.
+---
+
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PunGrumpy/gozo/main/install.sh | sh
+```
+
+You can also run `npm i -g gozo`, `bun add -g gozo` or `cargo install gozo`.
+
+## First run
+
+Run gozo inside a Go project for an interactive menu, or go straight to a command:
+
+```bash
+cd your_project
+gozo                # detects the project and asks what to do
+gozo doctor         # toolchain, go.mod / go.work, tidy, outdated deps, CGO
+gozo dev            # http://localhost:8080 with live reload
+gozo link           # choose docker or kubernetes, stored in .gozo/
+gozo deploy --prod  # stdout is the URL, everything else goes to stderr
+```
+
+Without a Go project, `gozo init` creates `go.mod`, `cmd/<name>/main.go` and `gozo.toml`.
+
+## Update
+
+`gozo update` downloads the latest release for your platform and replaces the binary in place. `gozo update --check` only reports whether a newer version exists.

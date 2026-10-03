@@ -1,0 +1,110 @@
+/* Scroll-driven motion. Every animation is bound to a scroll or view timeline, so it runs
+   off the main thread and plays backwards when the reader scrolls back. That is why only
+   decoration moves here: the wire and the hero kit. Content never fades with scroll. It
+   applies where timelines exist and the reader allows motion; elsewhere each element keeps
+   its resting state. The shorthand must come before the timeline, so each one lives here. */
+@custom-variant scroll-motion {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      @slot;
+    }
+  }
+}
+
+/* The wire's ink tip rides the middle of the viewport. A jog runs across first, in the
+   first few percent of its block, and the vertical stroke starts once it has (--wire-from). */
+@utility draw-y {
+  animation: draw-y linear both;
+  animation-timeline: view(block 50% 49%);
+  animation-range: var(--wire-from, cover 0%) cover 100%;
+}
+@utility draw-x {
+  animation: draw-x linear both;
+  animation-timeline: view(block 50% 49%);
+  animation-range: cover 0% cover 6%;
+}
+
+/* hero kit, one turn (--step of scroll) per piece: the piece blurs out at the start of its
+   turn while its brick takes over from the same spot, flies to its slot and presses in */
+@utility lift-off {
+  animation: lift-off linear both;
+  animation-timeline: scroll(root);
+  animation-range: calc(var(--o) * var(--step))
+    calc((var(--o) + 0.2) * var(--step));
+}
+@utility snap {
+  animation: snap linear both;
+  animation-timeline: scroll(root);
+  animation-range: calc(var(--o) * var(--step))
+    calc((var(--o) + 1) * var(--step));
+}
+@utility fade-in-scroll {
+  animation: fade-in linear both;
+  animation-timeline: scroll(root);
+  animation-range: var(--from) var(--to);
+}
+
+@keyframes draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+/* a 2px blur on both sides turns the swap from piece to brick into one shape */
+@keyframes lift-off {
+  from {
+    opacity: 1;
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+/* travel with a strong ease-in-out, hover just over the slot, then press down with ease-out.
+   While it moves the brick draws above every other piece. */
+@keyframes snap {
+  0% {
+    z-index: 10;
+    opacity: 0;
+    filter: blur(2px);
+    translate: calc(var(--fx) * 1cqw) calc(var(--fy) * 1cqh);
+    scale: 0.96;
+    animation-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  15% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  70% {
+    z-index: 10;
+    translate: 0 calc(-1 * var(--lift));
+    scale: 1;
+    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  100% {
+    z-index: calc(var(--o) + 1);
+    opacity: 1;
+    filter: blur(0);
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

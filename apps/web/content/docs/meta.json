@@ -1,0 +1,11 @@
+{
+  "title": "gozo",
+  "pages": [
+    "index",
+    "getting-started",
+    "commands",
+    "configuration",
+    "deploy",
+    "agents"
+  ]
+}

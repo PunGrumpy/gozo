@@ -1,0 +1,68 @@
+/* Fumadocs renders these parts without a className hook */
+#toc-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+#toc-title svg {
+  display: none;
+}
+#nd-toc {
+  text-transform: lowercase;
+}
+#nd-toc a,
+#nd-sidebar a[data-active] {
+  font-size: 13px;
+}
+
+/* search is a pill like the site's buttons */
+#nd-sidebar button[data-search-full] {
+  border-radius: 9999px;
+  border-color: var(--ds-gray-400);
+  background: transparent;
+}
+
+/* sidebar pages are plain text aligned with search; the current page gets the wire's
+   filled node in the gutter to its left */
+#nd-sidebar a[data-active] {
+  border-radius: 0;
+  background: transparent;
+}
+#nd-sidebar a[data-active="true"] {
+  color: var(--ds-gray-1000);
+}
+#nd-sidebar a[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -10px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  translate: 0 -50%;
+  background: var(--ds-gray-1000);
+}
+@media (hover: hover) and (pointer: fine) {
+  #nd-sidebar a[data-active="false"]:hover {
+    background: transparent;
+    color: var(--ds-gray-1000);
+  }
+}
+
+/* hover is instant, a press scales, nothing else animates */
+#nd-docs-layout :is(a, button) {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+#nd-docs-layout button:not([data-search-full]):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  #nd-docs-layout :is(a, button) {
+    transition: none;
+  }
+}
+
+/* keep the page from shifting when a Fumadocs dialog locks scroll */
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
