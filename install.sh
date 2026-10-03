@@ -3,7 +3,7 @@
 #
 # Environment:
 #   GOZO_INSTALL   directory to install into (default: ~/.gozo/bin)
-#   GOZO_VERSION   version tag to install, e.g. gozo-cli@0.2.0 (default: latest)
+#   GOZO_VERSION   version to install, e.g. 0.2.0 or gozo-cli@0.2.0 (default: latest)
 set -eu
 
 repo="PunGrumpy/gozo"
@@ -32,7 +32,9 @@ asset="gozo-${os}-${arch}.tar.gz"
 if [ "$version" = "latest" ]; then
   url="https://github.com/${repo}/releases/latest/download/${asset}"
 else
-  url="https://github.com/${repo}/releases/download/${version}/${asset}"
+  version="${version#gozo-cli@}"
+  version="${version#v}"
+  url="https://github.com/${repo}/releases/download/gozo-cli@${version}/${asset}"
 fi
 
 command -v curl >/dev/null 2>&1 || err "curl is required"
