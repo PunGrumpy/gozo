@@ -13,7 +13,7 @@ import { Dim, Line, Prompt, Term, True, Url } from "@/components/term";
 import { Scene } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-const INSTALL = "npm i -g gozo";
+const INSTALL = "npm i -g gozo-cli";
 
 const stats = [
   { label: "commands, one binary", value: "18" },
@@ -258,7 +258,7 @@ const HomePage = () => (
           <CopyButton text={INSTALL} />
         </div>
         <p className="mt-4.5 text-[13px] wrap-anywhere text-gray-900">
-          or <code className="mx-1 normal-case">bun add -g gozo</code> ·{" "}
+          or <code className="mx-1 normal-case">bun add -g gozo-cli</code> ·{" "}
           <code className="mx-1 normal-case">cargo install gozo</code> ·{" "}
           <code className="mx-1 normal-case">
             curl -fsSL

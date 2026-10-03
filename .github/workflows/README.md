@@ -6,7 +6,7 @@
 | `lint.yml` | PR | `cargo fmt`, `cargo clippy -D warnings` and `bun run verify` (ultracite, Rust gates, package lint and types through turbo) |
 | `lint-pr-title.yml` | PR | Conventional Commits PR titles, such as `feat: Add ...` |
 | `changeset-status.yml` | PR | Comments whether the PR carries a changeset, without blocking |
-| `release.yml` | push to main, manual dry run | changesets/action v2: `select-mode`, then either the `version` PR or `build` binaries and `publish` (npm trusted publishing, `gozo@<version>` tag, GitHub release with tarballs) |
+| `release.yml` | push to main, manual dry run | changesets/action v2: `select-mode`, then either the `version` PR or `build` binaries and `publish` (npm trusted publishing, `gozo-cli@<version>` tag, GitHub release with tarballs) |
 
 ### Composite actions
 
@@ -16,7 +16,7 @@
 
 ### Secrets
 
-- npm needs none when trusted publishing is configured for `gozo` and `gozo-*`; the publish job has `id-token: write`. [RELEASE.md](../../RELEASE.md) describes the token fallback
+- npm needs none when trusted publishing is configured for `gozo-cli` and `gozo-cli-*`; the publish job has `id-token: write`. [RELEASE.md](../../RELEASE.md) describes the token fallback
 - `GITHUB_TOKEN` is automatic and covers the release PR, tags and the GitHub release
 
 Action versions are pinned to the commit SHAs the upstream turborepo repository pins. Bump them together.

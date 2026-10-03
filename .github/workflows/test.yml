@@ -103,4 +103,4 @@ jobs:
           done
 
       - name: npm launcher test
-        run: bun run --filter gozo test
+        run: bun run --filter gozo-cli test
