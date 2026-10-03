@@ -27,8 +27,12 @@ const Page = async (props: PageProps<"/docs/[[...slug]]">) => {
 
   return (
     <DocsPage
-      className="md:px-10 xl:px-10"
+      className="px-6 sm:px-8 md:px-10 xl:px-10"
       full={page.data.full}
+      tableOfContentPopover={{
+        content: { className: "px-2 sm:px-4" },
+        trigger: { className: "px-6 sm:px-8 md:px-10" },
+      }}
       toc={page.data.toc}
     >
       <DocsTitle className="font-serif text-[2.75rem] leading-none font-normal tracking-[-0.02em]">
@@ -56,7 +60,7 @@ const Page = async (props: PageProps<"/docs/[[...slug]]">) => {
           githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/content/docs/${page.path}`}
         />
       </div>
-      <DocsBody>
+      <DocsBody className="[&_:not(pre)>code]:whitespace-nowrap">
         <Mdx
           components={getMDXComponents({
             // this allows you to link to other pages with relative file paths

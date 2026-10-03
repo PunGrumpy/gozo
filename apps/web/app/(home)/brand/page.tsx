@@ -186,17 +186,17 @@ const Swatch = ({
   name: string;
   use: string;
 }) => (
-  <Card className="p-2">
+  <Card className="flex items-center gap-1 p-2 sm:block">
     <div className="light">
       <div
         className={cn(
-          "outline-gray-alpha-300 h-30 rounded-lg outline-1 -outline-offset-1",
+          "outline-gray-alpha-300 h-14 w-18 rounded-lg outline-1 -outline-offset-1 sm:h-30 sm:w-auto",
           chip
         )}
         style={chip ? undefined : { background: hex }}
       />
     </div>
-    <div className="flex flex-col gap-0.5 px-2 pt-3 pb-1.5 font-mono text-[13px]">
+    <div className="flex flex-col gap-0.5 px-2 py-1 font-mono text-[13px] sm:pt-3 sm:pb-1.5">
       <b className="font-medium">{name}</b>
       <span className="text-xs text-gray-900">
         {hex} · {use}
@@ -315,7 +315,8 @@ const BrandPage = () => (
           format="png"
           label={
             <>
-              <b className="font-medium">social preview</b> · 1280 × 640
+              <b className="font-medium">social preview</b> ·
+              1280&nbsp;×&nbsp;640
             </>
           }
           preview
@@ -355,7 +356,7 @@ const BrandPage = () => (
       <Title className="mb-8 ml-(--gutter)">
         geist tokens for the interface. the scenes bring the rest.
       </Title>
-      <div className="ml-(--gutter) grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+      <div className="ml-(--gutter) grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] sm:gap-4">
         {tokens.map((t) => (
           <Swatch key={t.name} {...t} />
         ))}

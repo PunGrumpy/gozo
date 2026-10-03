@@ -25,7 +25,7 @@ const Wire = ({
     <i
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute top-0 bottom-0 left-(--x) -z-1 w-px bg-gray-400",
+        "pointer-events-none absolute top-0 bottom-0 left-(--x) -z-1 w-px bg-gray-400 max-md:hidden",
         lineClassName
       )}
     >
@@ -54,7 +54,7 @@ const Wire = ({
         aria-hidden="true"
         className={cn(
           "border-gray-1000 bg-background-100 text-gray-1000 absolute left-(--x) z-1 grid size-4 place-items-center border font-mono text-[8px] leading-none not-italic",
-          "top-0 -translate-1/2"
+          "top-0 -translate-1/2 max-md:hidden"
         )}
       >
         {glyph}
@@ -63,7 +63,7 @@ const Wire = ({
   </>
 );
 
-/* a block hangs off the wire on the left (l) or at the centre (c); on phones everything sits left */
+/* a block hangs off the wire on the left (l) or at the centre (c); phones drop the wire and everything sits left */
 export const Block = ({
   as: Tag = "section",
   children,
@@ -225,7 +225,7 @@ export const SiteFooter = ({ from }: { from?: Side }) => (
       aria-hidden="true"
       className={cn(
         "border-gray-1000 bg-background-100 text-gray-1000 absolute left-(--x) z-1 grid size-4 place-items-center border font-mono text-[8px] leading-none not-italic",
-        "bottom-(--wm) -translate-x-1/2 translate-y-1/2"
+        "bottom-(--wm) -translate-x-1/2 translate-y-1/2 max-md:hidden"
       )}
     >
       ●

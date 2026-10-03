@@ -253,17 +253,20 @@ const HomePage = () => (
 
     <Block id="install" x="l">
       <div className="max-w-[900px] pl-(--gutter)">
-        <div className="border-gray-1000 flex items-center justify-between gap-6 border-b pt-1.5 pb-3 font-mono text-[clamp(24px,3.4vw,43px)] normal-case">
-          <span className="min-w-0 wrap-anywhere">{INSTALL}</span>
+        <div className="border-gray-1000 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pt-1.5 pb-3 font-mono text-[clamp(16px,4.8vw,24px)] normal-case md:gap-x-6 md:text-[clamp(24px,3.4vw,43px)]">
+          <span className="whitespace-nowrap">{INSTALL}</span>
           <CopyButton text={INSTALL} />
         </div>
-        <p className="mt-4.5 text-[13px] wrap-anywhere text-gray-900">
-          or <code className="mx-1 normal-case">bun add -g gozo-cli</code> ·{" "}
-          <code className="mx-1 normal-case">cargo install gozo</code> ·{" "}
-          <code className="mx-1 normal-case">
-            curl -fsSL
-            https://raw.githubusercontent.com/PunGrumpy/gozo/main/install.sh |
-            sh
+        <p className="mt-4.5 flex flex-wrap items-baseline gap-x-2 text-[13px] wrap-anywhere text-gray-900">
+          or
+          <code className="normal-case">bun add -g gozo-cli</code>·
+          <code className="normal-case">cargo install gozo</code>·
+          <code className="normal-case">
+            curl -fsSL https://raw.githubusercontent.com/
+            <wbr />
+            PunGrumpy/
+            <wbr />
+            gozo/main/install.sh | sh
           </code>
         </p>
       </div>
