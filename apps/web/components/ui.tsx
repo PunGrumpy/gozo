@@ -32,7 +32,7 @@ export const Points = ({ items }: { items: string[] }) => (
 export const More = ({ className, ...props }: ComponentProps<typeof Link>) => (
   <Link
     className={cn(
-      "inline-block font-mono text-[13px] normal-case after:content-['_→'] hover:text-gray-900",
+      "inline-block font-mono text-[13px] whitespace-nowrap normal-case after:content-['_→'] hover:text-gray-900",
       className
     )}
     {...props}

@@ -315,7 +315,8 @@ const BrandPage = () => (
           format="png"
           label={
             <>
-              <b className="font-medium">social preview</b> · 1280 × 640
+              <b className="font-medium">social preview</b> ·
+              1280&nbsp;×&nbsp;640
             </>
           }
           preview
