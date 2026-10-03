@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "gozo"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -455,7 +455,7 @@ dependencies = [
 
 [[package]]
 name = "gozo-core"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "gozo-go",
@@ -467,7 +467,7 @@ dependencies = [
 
 [[package]]
 name = "gozo-deploy"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "gozo-core",
@@ -478,7 +478,7 @@ dependencies = [
 
 [[package]]
 name = "gozo-doctor"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "gozo-go",
  "serde",
@@ -486,7 +486,7 @@ dependencies = [
 
 [[package]]
 name = "gozo-go"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
