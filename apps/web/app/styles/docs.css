@@ -22,16 +22,21 @@
   background: transparent;
 }
 
+/* the phone drawer takes no className, so it gets the sidebar's lowercase here */
+#nd-sidebar-mobile {
+  text-transform: lowercase;
+}
+
 /* sidebar pages are plain text aligned with search; the current page gets the wire's
    filled node in the gutter to its left */
-#nd-sidebar a[data-active] {
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active] {
   border-radius: 0;
   background: transparent;
 }
-#nd-sidebar a[data-active="true"] {
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active="true"] {
   color: var(--ds-gray-1000);
 }
-#nd-sidebar a[data-active="true"]::before {
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active="true"]::before {
   content: "";
   position: absolute;
   inset-inline-start: -10px;
@@ -42,7 +47,7 @@
   background: var(--ds-gray-1000);
 }
 @media (hover: hover) and (pointer: fine) {
-  #nd-sidebar a[data-active="false"]:hover {
+  :is(#nd-sidebar, #nd-sidebar-mobile) a[data-active="false"]:hover {
     background: transparent;
     color: var(--ds-gray-1000);
   }
