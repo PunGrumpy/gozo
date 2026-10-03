@@ -60,7 +60,7 @@ const Page = async (props: PageProps<"/docs/[[...slug]]">) => {
           githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/content/docs/${page.path}`}
         />
       </div>
-      <DocsBody>
+      <DocsBody className="[&_:not(pre)>code]:whitespace-nowrap">
         <Mdx
           components={getMDXComponents({
             // this allows you to link to other pages with relative file paths
