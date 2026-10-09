@@ -96,19 +96,15 @@
       "cache": false,
       "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
     },
-    "//#check": {
-      "inputs": ["$TURBO_DEFAULT$", "!crates/**", "!target/**", "!.turbo/**"]
-    },
-    "//#fix": {
-      "cache": false
-    },
     "//#quality": {
-      "dependsOn": [
-        "//#check",
-        "//#check:rust",
-        "//#format:rust",
-        "//#test:rust"
-      ]
+      "command": ["bun", "x", "ultracite", "check"],
+      "inputs": ["$TURBO_DEFAULT$", "!crates/**", "!target/**", "!.turbo/**"],
+      "dependsOn": ["//#check:rust", "//#format:rust"]
+    },
+    "//#quality:fix": {
+      "command": ["bun", "x", "ultracite", "fix"],
+      "cache": false,
+      "dependsOn": ["//#fix:rust"]
     }
   }
 }
