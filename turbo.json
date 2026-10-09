@@ -2,7 +2,6 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "noUpdateNotifier": true,
-  // Host environment for cargo, rustup, go and GitHub Actions.
   "globalPassThroughEnv": [
     "Path",
     "APPDATA",
@@ -25,7 +24,6 @@
     "ACTIONS_CACHE_URL",
     "ACTIONS_RUNTIME_TOKEN"
   ],
-  // Rust and Go outputs differ per OS.
   "globalEnv": ["OS", "RUNNER_OS"],
   "tasks": {
     "build": {
