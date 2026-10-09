@@ -2,7 +2,10 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "noUpdateNotifier": true,
-  // Host environment for cargo, rustup, go and GitHub Actions.
+  "futureFlags": {
+    "experimentalTaskCommand": true,
+    "watchUsingTaskInputs": true
+  },
   "globalPassThroughEnv": [
     "Path",
     "APPDATA",
@@ -15,6 +18,9 @@
     "RUSTUP_HOME",
     "RUSTFLAGS",
     "RUSTC_WRAPPER",
+    "SDKROOT",
+    "DEVELOPER_DIR",
+    "MACOSX_DEPLOYMENT_TARGET",
     "CARGO_INCREMENTAL",
     "CARGO_BUILD_JOBS",
     "GOPATH",
@@ -25,7 +31,6 @@
     "ACTIONS_CACHE_URL",
     "ACTIONS_RUNTIME_TOKEN"
   ],
-  // Rust and Go outputs differ per OS.
   "globalEnv": ["OS", "RUNNER_OS"],
   "tasks": {
     "build": {
@@ -54,20 +59,16 @@
     "transit": {
       "dependsOn": ["^transit"]
     },
-    "//#build:rust": {
-      "cache": false,
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "crates/**",
-        "Cargo.toml",
-        "Cargo.lock",
-        "rust-toolchain.toml"
-      ]
-    },
-    "//#test:rust": {
-      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
-    },
     "//#check:rust": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--workspace",
+        "--",
+        "-D",
+        "warnings"
+      ],
       "inputs": [
         "crates/**",
         "Cargo.toml",
@@ -77,25 +78,36 @@
       ]
     },
     "//#format:rust": {
+      "command": ["cargo", "fmt", "--all", "--check"],
       "inputs": ["crates/**", ".rustfmt.toml"]
     },
     "//#fix:rust": {
+      "command": ["cargo", "fmt", "--all"],
       "cache": false
     },
-
-    "//#check": {
-      "inputs": ["$TURBO_DEFAULT$", "!crates/**", "!target/**", "!.turbo/**"]
+    "//#test:rust": {
+      "command": ["cargo", "test", "--workspace"],
+      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
     },
-    "//#fix": {
-      "cache": false
+    "//#build:rust": {
+      "command": ["cargo", "build", "--workspace"],
+      "cache": false,
+      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
+    },
+    "//#build:gozo": {
+      "command": ["cargo", "build", "--package", "gozo"],
+      "cache": false,
+      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
     },
     "//#quality": {
-      "dependsOn": [
-        "//#check",
-        "//#check:rust",
-        "//#format:rust",
-        "//#test:rust"
-      ]
+      "command": ["bun", "x", "ultracite", "check"],
+      "inputs": ["$TURBO_DEFAULT$", "!crates/**", "!target/**", "!.turbo/**"],
+      "dependsOn": ["//#check:rust", "//#format:rust"]
+    },
+    "//#quality:fix": {
+      "command": ["bun", "x", "ultracite", "fix"],
+      "cache": false,
+      "dependsOn": ["//#fix:rust"]
     }
   }
 }

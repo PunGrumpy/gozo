@@ -83,7 +83,7 @@ cargo build --release -p gozo
 ./target/release/gozo
 ```
 
-`bun run verify` runs everything CI runs. [CONTRIBUTING.md](CONTRIBUTING.md) describes the repository layout and the release flow.
+`bun run dev` serves the website and rebuilds the CLI on every crate edit. `bun run verify` runs everything CI runs. [CONTRIBUTING.md](CONTRIBUTING.md) describes the repository layout and the release flow.
 
 ## License
 
