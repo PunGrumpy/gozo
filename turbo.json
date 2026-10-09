@@ -3,7 +3,8 @@
   "ui": "tui",
   "noUpdateNotifier": true,
   "futureFlags": {
-    "experimentalTaskCommand": true
+    "experimentalTaskCommand": true,
+    "watchUsingTaskInputs": true
   },
   "globalPassThroughEnv": [
     "Path",
@@ -88,13 +89,12 @@
     "//#build:rust": {
       "command": ["cargo", "build", "--workspace"],
       "cache": false,
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "crates/**",
-        "Cargo.toml",
-        "Cargo.lock",
-        "rust-toolchain.toml"
-      ]
+      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
+    },
+    "//#build:gozo": {
+      "command": ["cargo", "build", "--package", "gozo"],
+      "cache": false,
+      "inputs": ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
     },
     "//#check": {
       "inputs": ["$TURBO_DEFAULT$", "!crates/**", "!target/**", "!.turbo/**"]
