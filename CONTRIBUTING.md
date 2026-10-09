@@ -9,11 +9,12 @@
 
 | What | Command |
 | --- | --- |
+| Work on everything | `bun run dev`: the website on `next dev`, the CLI rebuilt on every crate edit |
 | Build the CLI | `cargo build -p gozo`, or `bun run gozo -- doctor` to build and run |
 | Rust tests | `cargo test --workspace` |
-| Everything CI checks | `bun run verify` (`turbo run quality lint check-types`) |
-| Format Rust | `bun run fix:rust` (`cargo fmt --all`) |
-| Lint and format JS | `bun run check` and `bun run fix` (ultracite) |
+| Everything CI checks | `bun run verify` (`turbo run quality test:rust lint check-types`) |
+| Lint and format | `bun run check` and `bun run fix`, both languages at once |
+| One language only | `turbo run check:rust`, `turbo run fix:rust`, or `turbo run quality --only` for the JavaScript half |
 | Try against a Go project | `./target/debug/gozo -C path/to/project doctor` |
 | Try the npm launcher | `./packages/gozo/bin/gozo --help`, which uses `target/` in a checkout. `GOZO_BINARY_PATH` overrides it |
 

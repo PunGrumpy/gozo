@@ -5,8 +5,10 @@ gozo is a Rust CLI for Go projects, published on npm as `gozo-cli` (the command 
 ## Commands you will need
 
 - `bun install --frozen-lockfile` then `cargo build -p gozo`.
-- `bun run verify` runs what CI runs (`turbo run quality lint check-types`: ultracite check, rustfmt, clippy with `-D warnings`, Rust tests, JS lint/types).
-- `bun run check` / `bun run fix` for JS (ultracite); `bun run check:rust`, `bun run format:rust`, `bun run fix:rust` for Rust.
+- `bun run dev` is `turbo watch`: the website on `next dev` plus `cargo build -p gozo` on every crate edit.
+- `bun run check` and `bun run fix` cover both languages (ultracite, clippy with `-D warnings`, rustfmt), as do `bun run build` and `bun run test`.
+- `bun run verify` runs what CI runs (`turbo run quality test:rust lint check-types`).
+- Every command lives in `turbo.json` as a root task with its own `command`: `turbo run check:rust`, `turbo run fix:rust` and `turbo run test:rust` pick the Rust half, `turbo run quality --only` the JavaScript one. A root script must never share a name with a root task, or turbo refuses the recursion.
 - `cargo test --workspace`; integration tests in `crates/gozo/tests/` create throwaway Go projects.
 - Never bypass hooks or CI (`--no-verify` is not allowed).
 
